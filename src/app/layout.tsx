@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { QueryProvider } from "@/lib/query-provider";
+import { Suspense } from "react";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -8,8 +10,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "PTLPOS - Multi-Tenant Retail Management",
-  description: "Multi-tenant Point of Sale & Retail Management SaaS platform",
+  title: "PTLPOS - Point of Sale & Retail Management",
+  description: "Modern POS system for retail businesses",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
 };
 
 export default function RootLayout({
@@ -18,8 +21,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en">
+      <body className={inter.className}>
+        <QueryProvider>
+          {children}
+        </QueryProvider>
+      </body>
     </html>
   );
 }
