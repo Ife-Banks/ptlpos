@@ -3,12 +3,14 @@ import { create } from "zustand";
 interface UIState {
   isSidebarOpen: boolean;
   isSidebarCollapsed: boolean;
+  isMobileMenuOpen: boolean;
   activeModal: string | null;
   toasts: Toast[];
   
   setSidebarOpen: (open: boolean) => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   toggleSidebar: () => void;
+  setMobileMenuOpen: (open: boolean) => void;
   
   openModal: (modalId: string) => void;
   closeModal: () => void;
@@ -30,12 +32,14 @@ let toastId = 0;
 export const useUIStore = create<UIState>((set) => ({
   isSidebarOpen: true,
   isSidebarCollapsed: false,
+  isMobileMenuOpen: false,
   activeModal: null,
   toasts: [],
 
   setSidebarOpen: (open) => set({ isSidebarOpen: open }),
   setSidebarCollapsed: (collapsed) => set({ isSidebarCollapsed: collapsed }),
   toggleSidebar: () => set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
+  setMobileMenuOpen: (open) => set({ isMobileMenuOpen: open }),
 
   openModal: (modalId) => set({ activeModal: modalId }),
   closeModal: () => set({ activeModal: null }),

@@ -1,66 +1,89 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import type { User, UserRole } from "@/types/api";
-import { getAccessToken, getRefreshToken, setTokens, clearTokens, setStoredUser, getStoredUser } from "@/lib/api/client";
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  isLoading: boolean;
   
   setUser: (user: User | null) => void;
   login: (tokens: { access_token: string; refresh_token: string }, user: User) => void;
   logout: () => void;
-  setLoading: (loading: boolean) => void;
   hasRole: (roles: UserRole[]) => boolean;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      user: null,
-      isAuthenticated: false,
-      isLoading: true,
+const ACCESS_TOKEN_KEY = "ptlpos_access_token";
+const USER_KEY = "ptlpos_user";
 
-      setUser: (user) => {
-        set({ user, isAuthenticated: !!user });
-        if (user) {
-          setStoredUser(user);
-        }
-      },
+const getStoredUser = (): User | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const userStr = localStorage.getItem(USER_KEY);
+    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+    
+    // Need both user AND token for valid session
+    if (!userStr || !token) return null;
+    
+    const user = JSON.parse(userStr);
+    // Validate user has required fields
+    if (!user || !user.id || !user.role) return null;
+    
+    return user;
+  } catch {
+    return null;
+  }
+};
 
-      login: (tokens, user) => {
-        setTokens(tokens);
-        setStoredUser(user);
-        set({ user, isAuthenticated: true, isLoading: false });
-      },
+const getAccessToken = (): string | null => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(ACCESS_TOKEN_KEY);
+};
 
-      logout: () => {
-        clearTokens();
-        set({ user: null, isAuthenticated: false });
-      },
+export const useAuthStore = create<AuthState>((set, get) => ({
+  user: null,
+  isAuthenticated: false,
 
-      setLoading: (isLoading) => set({ isLoading }),
+  setUser: (user) => {
+    set({ user, isAuthenticated: !!user });
+  },
 
-      hasRole: (roles) => {
-        const { user } = get();
-        if (!user) return false;
-        return roles.includes(user.role);
-      },
-    }),
-    {
-      name: "ptlpos-auth",
-      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
-      onRehydrateStorage: () => (state) => {
-        const user = getStoredUser();
-        const accessToken = getAccessToken();
-        const refreshToken = getRefreshToken();
-        
-        if (user && accessToken && refreshToken) {
-          state?.setUser(user);
-        }
-        state?.setLoading(false);
-      },
+  login: (tokens, user) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token);
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
     }
-  )
-);
+    set({ user, isAuthenticated: true });
+  },
+
+  logout: () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+    }
+    set({ user: null, isAuthenticated: false });
+  },
+
+  hasRole: (roles) => {
+    const { user } = get();
+    if (!user) return false;
+    return roles.includes(user.role);
+  },
+}));
+
+export const initializeAuth = () => {
+  if (typeof window === "undefined") return;
+  
+  const user = getStoredUser();
+  const token = getAccessToken();
+  
+  // Only set as authenticated if we have valid user AND token
+  if (user && token) {
+    useAuthStore.setState({ user, isAuthenticated: true });
+  } else {
+    // Clear any stale data
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+    }
+    useAuthStore.setState({ user: null, isAuthenticated: false });
+  }
+};

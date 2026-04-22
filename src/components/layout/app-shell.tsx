@@ -13,11 +13,11 @@ export function AppShell({ children }: AppShellProps) {
   const { isSidebarCollapsed } = useUIStore();
   
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Sidebar />
       
       <div className={cn(
-        "transition-all duration-300",
+        "transition-all duration-300 ease-in-out",
         isSidebarCollapsed ? "ml-16" : "ml-60"
       )}>
         <Topbar />

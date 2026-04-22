@@ -5,21 +5,34 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default: "bg-primary text-white hover:bg-primary-dark active:scale-[0.98]",
         secondary: "bg-white text-primary border border-primary hover:bg-primary-bg",
         destructive: "bg-error text-white hover:bg-red-800 active:scale-[0.98]",
-        ghost: "text-text-secondary border border-border hover:bg-surface",
+        ghost: "text-[#434654] border border-[#E5E7EB] hover:bg-[#F7F9FB] dark:text-[#F1F1EE] dark:border-white/[0.08] dark:bg-[#1A1A1A] dark:hover:bg-[#222222]",
         link: "text-primary underline-offset-4 hover:underline bg-transparent border-none",
-        outline: "bg-surface border border-border-light text-text-secondary hover:bg-surface-raised",
+        outline: "bg-transparent border border-[#E5E7EB] text-[#434654] hover:bg-[#F7F9FB] dark:text-[#F1F1EE] dark:border-white/[0.08] dark:hover:bg-[#1A1A1A]",
+        
+        // Dark mode variants
+        dark: "bg-[#0066FF] text-white hover:bg-[#0052CC] shadow-[0_0_20px_rgba(0,102,255,0.3)] hover:shadow-[0_0_30px_rgba(0,102,255,0.4)]",
+        "dark-outline": "border border-white/[0.15] text-white hover:bg-white/[0.08]",
+        "dark-ghost": "text-[#888888] hover:text-white hover:bg-white/[0.08]",
+        
+        // Claymorphism variants
+        clay: "clay-button bg-white text-[#191C1E] border-none",
+        "clay-primary": "clay-button-primary border-none",
+        "clay-success": "clay-button-success border-none",
+        "clay-danger": "clay-button-danger border-none",
+        "clay-dark": "bg-[#1A1A1A] text-white border-none",
       },
       size: {
         sm: "h-8 min-w-[80px] px-3 text-xs",
         default: "h-10 min-w-[80px] px-4 py-2",
         lg: "h-12 min-w-[100px] px-6 text-base",
+        xl: "h-14 min-w-[120px] px-8 text-lg",
         icon: "h-10 w-10",
         "icon-sm": "h-8 w-8",
         "icon-lg": "h-12 w-12",

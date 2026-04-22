@@ -7,7 +7,7 @@ import { ShieldOff } from "lucide-react";
 export default function ForbiddenPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface p-4">
-      <div className="text-center max-w-md">
+      <div className="text-center max-w-full">
         <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-error-bg">
           <ShieldOff className="h-10 w-10 text-error" />
         </div>

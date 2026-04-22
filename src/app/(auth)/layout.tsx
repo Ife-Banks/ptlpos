@@ -1,24 +1,50 @@
-import { redirect } from "next/navigation";
-import { getAccessToken } from "@/lib/api/client";
+"use client";
 
+import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore, initializeAuth } from "@/stores/auth-store";
+import { Loader2 } from "lucide-react";
+ 
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const token = getAccessToken();
-  if (token) {
-    redirect("/admin/dashboard");
+  const router = useRouter();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const [initialized, setInitialized] = useState(false);
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    // Only initialize once
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      initializeAuth();
+      // Small delay to ensure state is set
+      setTimeout(() => setInitialized(true), 50);
+    }
+  }, []);
+
+  // Redirect if authenticated (after initialization)
+  useEffect(() => {
+    if (initialized && isAuthenticated) {
+      router.replace("/admin/dashboard");
+    }
+  }, [initialized, isAuthenticated, router]);
+
+  // Show loading spinner until initialized
+  if (!initialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F7F9FB] dark:bg-[#0A0A0A]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#003D9B] dark:text-[#0066FF]" />
+      </div>
+    );
   }
 
+  // Show login page if not authenticated
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface p-4 relative overflow-hidden">
-      <div className="absolute inset-0 bg-pattern pointer-events-none" />
-      <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/10 blur-[100px] rounded-full" />
-      <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-secondary/10 blur-[100px] rounded-full" />
-      <div className="w-full max-w-md relative">
-        {children}
-      </div>
+    <div className="min-h-screen bg-[#F7F9FB] dark:bg-[#0A0A0A] transition-colors duration-300">
+      {children}
     </div>
   );
 }
