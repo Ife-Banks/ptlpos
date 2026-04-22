@@ -11,11 +11,9 @@ export default function POSLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    if (isLoading) return;
-
     if (!isAuthenticated) {
       router.push("/login");
       return;
@@ -27,7 +25,7 @@ export default function POSLayout({
     }
 
     router.push("/pos-terminal");
-  }, [isAuthenticated, isLoading, user, router]);
+  }, [isAuthenticated, user, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-950">

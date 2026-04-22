@@ -43,7 +43,7 @@ export default function LoginPage() {
         SALES_REP: "John Sales",
       };
       const mockUser: User = {
-        id: "1",
+        userId: "1",
         email: email || "demo@ptlpos.com",
         name: roleNames[role] || "Demo User",
         role: role,

@@ -11,8 +11,21 @@ import { PaymentModal } from "@/components/pos/payment-modal";
 import { usePOSStore } from "@/stores/pos-store";
 import { useAuthStore } from "@/stores";
 import { useTheme } from "@/components/providers/theme-provider";
-import type { SaleItem } from "@/types/api";
 import { cn } from "@/lib/utils";
+
+interface CartItem {
+  id: string;
+  productId: string;
+  product: { id: string; name: string; price: number; sku: string };
+  quantity: number;
+  price: number;
+  total: number;
+  saleId: string;
+  unitPrice: number;
+  discount: number;
+  taxRate: number;
+  taxAmount: number;
+}
 
 const mockProducts = [
   { id: "1", name: "Premium Widget A", sku: "WGT-001", price: 25.00, category: "Electronics", stock: 45 },
@@ -39,7 +52,7 @@ export default function POSTerminalPage() {
   const { user } = useAuthStore();
   const { theme } = useTheme();
   const { isPaymentModalOpen, setPaymentModalOpen } = usePOSStore();
-  const [cartItems, setCartItems] = useState<SaleItem[]>([]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [attachedCustomer, setAttachedCustomer] = useState<{ id: string; name: string } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
 
@@ -49,7 +62,7 @@ export default function POSTerminalPage() {
     return selectedCategory === "All" || product.category === selectedCategory;
   });
 
-  const cartSubtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const cartSubtotal = cartItems.reduce((sum, item) => sum + (item.total || 0), 0);
   const cartTax = cartSubtotal * 0.075;
   const cartTotal = cartSubtotal + cartTax;
 
@@ -72,6 +85,11 @@ export default function POSTerminalPage() {
           quantity: 1,
           price: product.price,
           total: product.price,
+          saleId: "",
+          unitPrice: product.price,
+          discount: 0,
+          taxRate: 7.5,
+          taxAmount: product.price * 0.075,
         },
       ];
     });
@@ -84,7 +102,12 @@ export default function POSTerminalPage() {
       }
       return prev.map((item) =>
         item.id === itemId
-          ? { ...item, quantity, total: quantity * item.price }
+          ? { 
+              ...item, 
+              quantity, 
+              total: quantity * item.price,
+              taxAmount: (quantity * item.price) * 0.075,
+            }
           : item
       );
     });
@@ -203,7 +226,7 @@ export default function POSTerminalPage() {
         {/* Cart */}
         <div className={cn("w-[340px]", isDark ? "bg-gray-900" : "bg-white")}>
           <CartPanel
-            items={cartItems}
+            items={cartItems as any}
             subtotal={cartSubtotal}
             tax={cartTax}
             total={cartTotal}

@@ -138,7 +138,7 @@ export function CartPanel({
                     "text-xs font-mono",
                     isDark ? "text-gray-500" : "text-gray-500"
                   )}>
-                    {formatCurrency(item.price)} each
+                    {formatCurrency(item.unitPrice || (item as any).price)} each
                   </p>
                 </div>
 

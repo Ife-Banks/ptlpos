@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 
+interface ReceiptCustomer {
+  name: string;
+}
+
 interface ReceiptItem {
   id: string;
   name: string;
@@ -14,10 +18,20 @@ interface ReceiptItem {
   total: number;
 }
 
-const mockReceipt = {
+const mockReceipt: {
+  saleNumber: string;
+  createdAt: string;
+  customer?: ReceiptCustomer;
+  items: ReceiptItem[];
+  subtotal: number;
+  taxAmount: number;
+  discountAmount: number;
+  total: number;
+  payments: { id: string; method: string; amount: number }[];
+} = {
   saleNumber: "SAL-2024-1234",
   createdAt: "2024-10-15 10:30:45",
-  customer: null,
+  customer: undefined,
   items: [
     { id: "1", name: "Widget A", quantity: 2, price: 25.0, total: 50.0 },
     { id: "2", name: "Gadget X", quantity: 1, price: 49.99, total: 49.99 },
@@ -91,13 +105,13 @@ export default function ReceiptPage() {
                 <span>Date</span>
                 <span>{sale.createdAt}</span>
               </div>
-              {sale.customer && (
+{sale.customer && sale.customer.name ? (
                 <div className="flex justify-between text-sm">
                   <span>Customer</span>
                   <span>{sale.customer.name}</span>
                 </div>
-              )}
-            </div>
+              ) : null}
+              </div>
 
             <div className="space-y-2 mb-4">
               {sale.items.map((item) => (

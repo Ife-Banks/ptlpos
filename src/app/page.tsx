@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Menu, X, ArrowRight, Play } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "@/components/providers/theme-provider";
 
 // ---------- Icons ----------
 const PosIcon = () => (
@@ -111,18 +112,18 @@ const howItWorks = [
 // ---------- Animation Variants ----------
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
-};
+  visible: { opacity: 1, y: 0 },
+} as const;
 
 const staggerContainer = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.15 } },
-};
+} as const;
 
 // ---------- Components ----------
 // Full width container without max-width restrictions
 const Container = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <div className={`w-full max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8 xl:px-12 ${className}`}>{children}</div>
+  <div className={`w-full mx-auto px-4 md:px-6 lg:px-8 xl:px-12 ${className}`}>{children}</div>
 );
 
 const SectionHeader = ({ title, subtitle }: { title: React.ReactNode; subtitle?: string }) => (
@@ -142,7 +143,7 @@ const SectionHeader = ({ title, subtitle }: { title: React.ReactNode; subtitle?:
         whileInView="visible"
         viewport={{ once: true }}
         variants={fadeUp}
-        className="text-lg text-on-surface-variant max-w-2xl mx-auto"
+        className="text-lg text-gray-600 dark:text-gray-400 max-w-full mx-auto"
       >
         {subtitle}
       </motion.p>
@@ -161,7 +162,7 @@ const NavLink = ({ href, children, onClick }: { href: string; children: React.Re
         onClick?.();
       }
     }}
-    className="text-sm text-on-surface-variant hover:text-primary transition-colors"
+    className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
   >
     {children}
   </a>
@@ -170,6 +171,8 @@ const NavLink = ({ href, children, onClick }: { href: string; children: React.Re
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -186,7 +189,7 @@ export default function Home() {
   }, [mobileMenuOpen]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={isDark ? "min-h-screen bg-gray-950" : "min-h-screen bg-gray-50"}>
       {/* Header */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -499,7 +502,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center max-w-3xl mx-auto"
+              className="text-center max-w-full mx-auto"
             >
               <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">Ready to Transform Your Business?</h2>
               <p className="text-xl text-white/80 mb-10">Join thousands of retailers who trust PTLPOS. Start your free trial today.</p>

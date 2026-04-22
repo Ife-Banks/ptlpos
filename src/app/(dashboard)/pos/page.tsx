@@ -7,10 +7,9 @@ import { Loader2 } from "lucide-react";
 
 export default function POSPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading, user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    if (isLoading) return;
     if (!isAuthenticated) {
       router.push("/login");
       return;
@@ -19,20 +18,12 @@ export default function POSPage() {
       router.push("/403");
       return;
     }
-    router.replace("/sales/pos");
-  }, [isAuthenticated, isLoading, user, router]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-surface">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+    router.replace("/pos-terminal");
+  }, [isAuthenticated, user, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-950">
+      <Loader2 className="h-8 w-8 animate-spin text-[#003D9B] dark:text-[#0066FF]" />
     </div>
   );
 }

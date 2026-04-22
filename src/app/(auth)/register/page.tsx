@@ -6,8 +6,13 @@ import { Eye, EyeOff, Loader2, ShoppingCart, CheckCircle, ArrowLeft, ArrowRight 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTheme } from "@/components/providers/theme-provider";
+import { cn } from "@/lib/utils";
 
 export default function RegisterPage() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -42,8 +47,6 @@ export default function RegisterPage() {
     }
 
     setIsLoading(true);
-
-    // Simulate registration
     setTimeout(() => {
       setIsLoading(false);
       window.location.href = "/admin/dashboard";
@@ -51,27 +54,28 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="bg-surface-container-lowest border border-border-light rounded-xl shadow-lg p-8">
-      {/* Branding */}
+    <div className={cn(
+      "w-full max-w-4xl border rounded-xl shadow-lg p-8 mx-auto my-12",
+      isDark ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200"
+    )}>
       <div className="flex flex-col items-center mb-6">
-        <div className="w-12 h-12 bg-primary-container rounded-xl flex items-center justify-center mb-3 shadow-sm">
+        <div className="w-12 h-12 bg-[#003D9B] dark:bg-[#0066FF] rounded-xl flex items-center justify-center mb-3 shadow-sm">
           <ShoppingCart className="w-6 h-6 text-white" />
         </div>
-        <h1 className="text-xl font-bold text-text-primary">Create an account</h1>
-        <p className="text-sm text-text-muted">
+        <h1 className={cn("text-xl font-bold", isDark ? "text-white" : "text-gray-900")}>Create an account</h1>
+        <p className={cn("text-sm", isDark ? "text-gray-400" : "text-gray-500")}>
           {step === 1 ? "Enter your organization details" : "Create your admin account"}
         </p>
       </div>
 
-      {/* Progress */}
       <div className="flex justify-center gap-2 mb-6">
-        <div className={`h-2 w-16 rounded-full ${step >= 1 ? 'bg-primary' : 'bg-border'}`} />
-        <div className={`h-2 w-16 rounded-full ${step >= 2 ? 'bg-primary' : 'bg-border'}`} />
+        <div className={cn("h-2 w-16 rounded-full", step >= 1 ? "bg-[#003D9B] dark:bg-[#0066FF]" : isDark ? "bg-gray-700" : "bg-gray-200")} />
+        <div className={cn("h-2 w-16 rounded-full", step >= 2 ? "bg-[#003D9B] dark:bg-[#0066FF]" : isDark ? "bg-gray-700" : "bg-gray-200")} />
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="p-3 text-sm text-error bg-error-bg rounded-md">
+          <div className={cn("p-3 text-sm rounded-md", isDark ? "bg-red-900/20 text-red-400" : "bg-red-50 text-red-600")}>
             {error}
           </div>
         )}
@@ -79,7 +83,7 @@ export default function RegisterPage() {
         {step === 1 ? (
           <>
             <div className="space-y-2">
-              <Label htmlFor="orgName">Organization Name *</Label>
+              <Label htmlFor="orgName" className={isDark ? "text-gray-300" : "text-gray-700"}>Organization Name *</Label>
               <Input
                 id="orgName"
                 type="text"
@@ -87,11 +91,12 @@ export default function RegisterPage() {
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
                 required
+                className={isDark ? "bg-gray-800 border-gray-700 text-white" : "bg-gray-50 border-gray-200"}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="orgEmail">Organization Email *</Label>
+              <Label htmlFor="orgEmail" className={isDark ? "text-gray-300" : "text-gray-700"}>Organization Email *</Label>
               <Input
                 id="orgEmail"
                 type="email"
@@ -99,35 +104,38 @@ export default function RegisterPage() {
                 value={orgEmail}
                 onChange={(e) => setOrgEmail(e.target.value)}
                 required
+                className={isDark ? "bg-gray-800 border-gray-700 text-white" : "bg-gray-50 border-gray-200"}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="orgPhone">Phone</Label>
+              <Label htmlFor="orgPhone" className={isDark ? "text-gray-300" : "text-gray-700"}>Phone</Label>
               <Input
                 id="orgPhone"
                 type="tel"
                 placeholder="+1 234 567 8900"
                 value={orgPhone}
                 onChange={(e) => setOrgPhone(e.target.value)}
+                className={isDark ? "bg-gray-800 border-gray-700 text-white" : "bg-gray-50 border-gray-200"}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="orgWebsite">Website</Label>
+              <Label htmlFor="orgWebsite" className={isDark ? "text-gray-300" : "text-gray-700"}>Website</Label>
               <Input
                 id="orgWebsite"
                 type="url"
                 placeholder="https://company.com"
                 value={orgWebsite}
                 onChange={(e) => setOrgWebsite(e.target.value)}
+                className={isDark ? "bg-gray-800 border-gray-700 text-white" : "bg-gray-50 border-gray-200"}
               />
             </div>
           </>
         ) : (
           <>
             <div className="space-y-2">
-              <Label htmlFor="userName">Full Name *</Label>
+              <Label htmlFor="userName" className={isDark ? "text-gray-300" : "text-gray-700"}>Full Name *</Label>
               <Input
                 id="userName"
                 type="text"
@@ -135,11 +143,12 @@ export default function RegisterPage() {
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
                 required
+                className={isDark ? "bg-gray-800 border-gray-700 text-white" : "bg-gray-50 border-gray-200"}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="userEmail">Email *</Label>
+              <Label htmlFor="userEmail" className={isDark ? "text-gray-300" : "text-gray-700"}>Email *</Label>
               <Input
                 id="userEmail"
                 type="email"
@@ -147,11 +156,12 @@ export default function RegisterPage() {
                 value={userEmail}
                 onChange={(e) => setUserEmail(e.target.value)}
                 required
+                className={isDark ? "bg-gray-800 border-gray-700 text-white" : "bg-gray-50 border-gray-200"}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password *</Label>
+              <Label htmlFor="password" className={isDark ? "text-gray-300" : "text-gray-700"}>Password *</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -161,21 +171,27 @@ export default function RegisterPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={8}
-                  className="pr-10"
+                  className={cn(
+                    "pr-10",
+                    isDark ? "bg-gray-800 border-gray-700 text-white" : "bg-gray-50 border-gray-200"
+                  )}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
+                  className={cn(
+                    "absolute right-3 top-1/2 -translate-y-1/2",
+                    isDark ? "text-gray-400 hover:text-white" : "text-gray-500 hover:text-gray-700"
+                  )}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-xs text-text-muted">Must be at least 8 characters</p>
+              <p className={cn("text-xs", isDark ? "text-gray-500" : "text-gray-400")}>Must be at least 8 characters</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password *</Label>
+              <Label htmlFor="confirmPassword" className={isDark ? "text-gray-300" : "text-gray-700"}>Confirm Password *</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -183,6 +199,7 @@ export default function RegisterPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                className={isDark ? "bg-gray-800 border-gray-700 text-white" : "bg-gray-50 border-gray-200"}
               />
             </div>
           </>
@@ -192,9 +209,9 @@ export default function RegisterPage() {
           {step === 2 && (
             <Button 
               type="button" 
-              variant="secondary"
+              variant="outline"
               onClick={() => setStep(1)}
-              className="flex-1"
+              className={cn("flex-1", isDark ? "border-gray-700 text-gray-300 hover:bg-gray-800" : "border-gray-300")}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
@@ -202,8 +219,7 @@ export default function RegisterPage() {
           )}
           <Button 
             type="submit" 
-            className="flex-1" 
-            size="lg"
+            className={cn("flex-1", "bg-[#003D9B] hover:bg-[#003D9B]/90 text-white dark:bg-[#0066FF] dark:hover:bg-[#0066FF]/90")}
             disabled={isLoading}
           >
             {isLoading ? (
@@ -225,18 +241,17 @@ export default function RegisterPage() {
           </Button>
         </div>
 
-        <p className="text-sm text-center text-text-muted pt-2">
+        <p className={cn("text-sm text-center pt-2", isDark ? "text-gray-400" : "text-gray-500")}>
           Already have an account?{" "}
-          <Link href="/login" className="text-primary hover:underline font-medium">
+          <Link href="/login" className="text-[#003D9B] dark:text-[#0066FF] hover:underline font-medium">
             Sign in
           </Link>
         </p>
       </form>
 
-      {/* Footer */}
-      <div className="mt-6 pt-6 border-t border-border-light flex justify-center gap-4 text-xs text-text-muted">
-        <Link href="#" className="hover:text-primary">Privacy Policy</Link>
-        <Link href="#" className="hover:text-primary">Terms of Service</Link>
+      <div className={cn("mt-6 pt-6 border-t flex justify-center gap-4 text-xs", isDark ? "border-gray-700 text-gray-500" : "border-gray-200 text-gray-400")}>
+        <Link href="#" className={isDark ? "hover:text-blue-400" : "hover:text-blue-600"}>Privacy Policy</Link>
+        <Link href="#" className={isDark ? "hover:text-blue-400" : "hover:text-blue-600"}>Terms of Service</Link>
       </div>
     </div>
   );
