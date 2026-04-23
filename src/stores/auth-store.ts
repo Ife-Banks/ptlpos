@@ -24,8 +24,8 @@ const getStoredUser = (): User | null => {
     if (!userStr || !token) return null;
     
     const user = JSON.parse(userStr);
-    // Validate user has required fields
-    if (!user || !user.id || !user.role) return null;
+    // Validate user has required fields (check for id or userId)
+    if (!user || (!user.id && !user.userId) || !user.role) return null;
     
     return user;
   } catch {

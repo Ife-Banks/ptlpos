@@ -66,7 +66,7 @@ export default function LoginPage() {
         } else if (role === "MANAGER") {
           router.push("/manager/dashboard");
         } else {
-          router.push("/sales/pos");
+          router.push("/pos-terminal");
         }
       }, 150);
     };
