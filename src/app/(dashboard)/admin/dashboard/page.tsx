@@ -1,41 +1,66 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Users,
   Package,
   ShoppingCart,
   DollarSign,
-  TrendingUp,
-  ArrowUpRight,
-  FileText,
-  Settings,
   BarChart3,
   Activity,
   Loader2,
+  Warehouse,
+  Building2,
+  ClipboardList,
 } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "@/components/providers/theme-provider";
 import { analyticsApi } from "@/lib/api/analytics";
-import type { DashboardAnalytics } from "@/types/api";
+import { productsApi } from "@/lib/api/products";
+import { customersApi } from "@/lib/api/customers";
+import { categoriesApi } from "@/lib/api/categories";
+import { branchesApi } from "@/lib/api/branches";
 
 export default function AdminDashboardPage() {
   const { theme } = useTheme();
-  const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [counts, setCounts] = useState({
+    revenue: 0,
+    revenueChange: 0,
+    salesCount: 0,
+    salesCountChange: 0,
+    products: 0,
+    customers: 0,
+    categories: 0,
+    branches: 0,
+  });
 
   useEffect(() => {
-    loadAnalytics();
+    loadDashboardData();
   }, []);
 
-  const loadAnalytics = async () => {
+  const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const data = await analyticsApi.getDashboard();
-      setAnalytics(data);
+      const [analytics, products, customers, categories, branches] = await Promise.all([
+        analyticsApi.getDashboard(),
+        productsApi.list({ limit: 1 }),
+        customersApi.list({ limit: 1 }),
+        categoriesApi.list({ limit: 1 }),
+        branchesApi.list({ limit: 1 }),
+      ]);
+
+      setCounts({
+        revenue: analytics.revenue || 0,
+        revenueChange: analytics.revenueChange || 0,
+        salesCount: analytics.salesCount || 0,
+        salesCountChange: analytics.salesCountChange || 0,
+        products: products.total || 0,
+        customers: customers.total || 0,
+        categories: categories.total || 0,
+        branches: branches.total || 0,
+      });
     } catch (err) {
       console.error(err);
     } finally {
@@ -45,62 +70,56 @@ export default function AdminDashboardPage() {
 
   const statsCards = [
     {
-      title: "Total Users",
-      value: analytics?.revenue ? "2,456" : "-",
-      change: "+12.5%",
-      icon: Users,
-      color: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
-      link: "/admin/users",
-    },
-    {
-      title: "Products",
-      value: "1,234",
-      change: "+8.2%",
-      icon: Package,
+      title: "Total Revenue",
+      value: counts.revenue ? `$${counts.revenue.toLocaleString()}` : "$0",
+      change: `${counts.revenueChange}%`,
+      icon: DollarSign,
       color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400",
-      link: "/manager/inventory",
+      link: "/admin/analytics",
     },
     {
-      title: "Total Orders",
-      value: analytics?.salesCount?.toString() || "-",
-      change: analytics?.salesCountChange ? `${analytics.salesCountChange}%` : "-",
+      title: "Total Sales",
+      value: counts.salesCount.toString(),
+      change: `${counts.salesCountChange}%`,
       icon: ShoppingCart,
       color: "bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400",
       link: "/admin/sales",
     },
     {
-      title: "Revenue",
-      value: analytics?.revenue ? `$${analytics.revenue.toLocaleString()}` : "-",
-      change: analytics?.revenueChange ? `${analytics.revenueChange}%` : "-",
-      icon: DollarSign,
+      title: "Products",
+      value: counts.products.toString(),
+      change: "All time",
+      icon: Package,
+      color: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
+      link: "/manager/inventory",
+    },
+    {
+      title: "Customers",
+      value: counts.customers.toString(),
+      change: "All time",
+      icon: Users,
       color: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400",
-      link: "/admin/analytics",
+      link: "/manager/customers",
     },
   ];
 
   const quickActions = [
-    { label: "Users", icon: Users, href: "/admin/users", bg: "hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-900/20" },
-    { label: "Analytics", icon: BarChart3, href: "/admin/analytics", bg: "hover:bg-violet-50 hover:border-violet-200 dark:hover:bg-violet-900/20" },
-    { label: "Reports", icon: FileText, href: "/admin/import-export", bg: "hover:bg-amber-50 hover:border-amber-200 dark:hover:bg-amber-900/20" },
-    { label: "Settings", icon: Settings, href: "/admin/settings", bg: "hover:bg-gray-50 hover:border-gray-200 dark:hover:bg-gray-800/50" },
-    { label: "Audit", icon: Activity, href: "/admin/audit", bg: "hover:bg-emerald-50 hover:border-emerald-200 dark:hover:bg-emerald-900/20" },
-  ];
-
-  const recentActivity = [
-    { user: "John Doe", action: "Created new order", time: "2 min ago", avatar: "JD", color: "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300" },
-    { user: "Jane Smith", action: "Updated inventory", time: "15 min ago", avatar: "JS", color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900 dark:text-emerald-300" },
+    { label: "Users", icon: Users, href: "/admin/users", color: "text-blue-500" },
+    { label: "Products", icon: Package, href: "/manager/inventory", color: "text-emerald-500" },
+    { label: "Categories", icon: ClipboardList, href: "/manager/inventory", color: "text-violet-500" },
+    { label: "Branches", icon: Building2, href: "/manager/inventory", color: "text-amber-500" },
+    { label: "Analytics", icon: BarChart3, href: "/admin/analytics", color: "text-blue-500" },
   ];
 
   return (
     <div className="space-y-6 p-6 max-w-[1600px] mx-auto">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Welcome back! Here's what's happening.</p>
         </div>
         <Button 
-          onClick={loadAnalytics}
+          onClick={loadDashboardData}
           className="bg-[#003D9B] hover:bg-[#003D9B]/90 dark:bg-[#0066FF] dark:hover:bg-[#0066FF]/90 text-white"
         >
           <Activity className="mr-2 h-4 w-4" />
@@ -108,14 +127,12 @@ export default function AdminDashboardPage() {
         </Button>
       </div>
 
-      {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-[#003D9B] dark:text-[#0066FF]" />
         </div>
       )}
 
-      {/* Stats Cards */}
       {!loading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {statsCards.map((stat, index) => (
@@ -128,52 +145,27 @@ export default function AdminDashboardPage() {
                 <div className={`p-3 rounded-lg ${stat.color}`}>
                   <stat.icon className="h-6 w-6" />
                 </div>
-                <span className="flex items-center text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                  <ArrowUpRight className="h-3 w-3 mr-1" />
-                  {stat.change}
-                </span>
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400">{stat.title}</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stat.value}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{stat.change}</p>
             </Link>
           ))}
         </div>
       )}
 
-      {/* Quick Actions */}
       {!loading && (
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
           {quickActions.map((action, index) => (
             <Link
               key={index}
               href={action.href}
-              className={`bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 hover:shadow-lg transition-all cursor-pointer ${action.bg}`}
+              className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 hover:shadow-lg transition-all cursor-pointer"
             >
-              <action.icon className="h-6 w-6 text-gray-600 dark:text-gray-400 mb-2" />
+              <action.icon className={`h-6 w-6 ${action.color} mb-2`} />
               <p className="font-medium text-gray-900 dark:text-white text-sm">{action.label}</p>
             </Link>
           ))}
-        </div>
-      )}
-
-      {/* Recent Activity */}
-      {!loading && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h2>
-          <div className="space-y-4">
-            {recentActivity.map((activity, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full ${activity.color} flex items-center justify-center text-sm font-semibold`}>
-                  {activity.avatar}
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900 dark:text-white">{activity.user}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{activity.action}</p>
-                </div>
-                <span className="text-sm text-gray-400">{activity.time}</span>
-              </div>
-            ))}
-          </div>
         </div>
       )}
     </div>
