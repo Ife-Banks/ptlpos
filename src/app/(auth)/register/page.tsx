@@ -57,17 +57,12 @@ export default function RegisterPage() {
     try {
       const { authApi } = await import("@/lib/api/auth");
       await authApi.register({
-        tenant: {
-          name: orgName,
-          email: orgEmail,
-          phone: orgPhone || undefined,
-          website: orgWebsite || undefined,
-        },
-        user: {
-          name: userName,
-          email: userEmail,
-          password: password,
-        },
+        organizationName: orgName,
+        name: userName,
+        email: userEmail,
+        password: password,
+        phone: orgPhone || undefined,
+        website: orgWebsite || undefined,
       });
       setSuccess(true);
       setIsLoading(false);
