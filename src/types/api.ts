@@ -35,12 +35,15 @@ export interface LoginCredentials {
 }
 
 export interface RegisterData {
-  organizationName: string;
-  name: string;
-  email: string;
-  password: string;
-  phone?: string;
-  website?: string;
+  tenant: {
+    name: string;
+    email: string;
+  };
+  user: {
+    name: string;
+    email: string;
+    password: string;
+  };
 }
 
 // ===========================================
