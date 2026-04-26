@@ -1,81 +1,77 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-  Search,
-  Download,
-  Eye,
-  MoreHorizontal,
-  FileText,
-  User,
-  Settings,
-  ShoppingCart,
-  Package,
-  LogIn,
-  LogOut,
-  Plus,
-  Minus,
-  Trash2,
-} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Search, MoreHorizontal, ChevronLeft, ChevronRight, Loader2, AlertCircle, User, Calendar, Clock, Filter } from "lucide-react";
+import { auditApi, type AuditLog } from "@/lib/api/audit";
 
-const auditLogs = [
-  { id: "1", action: "USER_LOGIN", user: "John Doe", email: "john@example.com", description: "User logged in successfully", ip: "192.168.1.100", timestamp: "Oct 15, 10:30 AM" },
-  { id: "2", action: "CREATE_ORDER", user: "Jane Smith", email: "jane@example.com", description: "Created new order #ORD-1234", ip: "192.168.1.101", timestamp: "Oct 15, 10:25 AM" },
-  { id: "3", action: "UPDATE_PRODUCT", user: "Mike Johnson", email: "mike@example.com", description: "Updated product Widget A", ip: "192.168.1.102", timestamp: "Oct 15, 10:20 AM" },
-  { id: "4", action: "DELETE_USER", user: "Sarah Wilson", email: "sarah@example.com", description: "Deleted user account tom@example.com", ip: "192.168.1.103", timestamp: "Oct 15, 10:15 AM" },
-  { id: "5", action: "UPDATE_SETTINGS", user: "John Doe", email: "john@example.com", description: "Updated payment settings", ip: "192.168.1.100", timestamp: "Oct 15, 10:10 AM" },
-  { id: "6", action: "CREATE_INVENTORY", user: "Emily Davis", email: "emily@example.com", description: "Added new inventory item", ip: "192.168.1.104", timestamp: "Oct 15, 10:05 AM" },
-  { id: "7", action: "USER_LOGOUT", user: "Tom Brown", email: "tom@example.com", description: "User logged out", ip: "192.168.1.105", timestamp: "Oct 15, 09:55 AM" },
-  { id: "8", action: "EXPORT_DATA", user: "Chris Lee", email: "chris@example.com", description: "Exported customer data", ip: "192.168.1.106", timestamp: "Oct 15, 09:50 AM" },
-];
+const ITEMS_PER_PAGE = 15;
 
-const stats = [
-  { label: "Total Events", value: "12,456", sub: "This month", icon: FileText, color: "blue" },
-  { label: "User Activities", value: "8,234", sub: "This month", icon: User, color: "green" },
-  { label: "System Changes", value: "2,345", sub: "This month", icon: Settings, color: "purple" },
-  { label: "Data Exports", value: "1,877", sub: "This month", icon: Download, color: "amber" },
-];
+const getActionBadge = (action: string) => {
+  switch (action) {
+    case "CREATE":
+      return { label: "Create", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" };
+    case "UPDATE":
+      return { label: "Update", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" };
+    case "DELETE":
+      return { label: "Delete", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" };
+    case "LOGIN":
+      return { label: "Login", className: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400" };
+    case "LOGOUT":
+      return { label: "Logout", className: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400" };
+    case "PATCH":
+      return { label: "Patch", className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" };
+    default:
+      return { label: action, className: "bg-gray-100 text-gray-700" };
+  }
+};
 
-const actionTypes = [
-  "USER_LOGIN", "USER_LOGOUT", "CREATE_ORDER", "UPDATE_ORDER", "DELETE_ORDER",
-  "CREATE_PRODUCT", "UPDATE_PRODUCT", "DELETE_PRODUCT", "CREATE_USER", "UPDATE_USER",
-  "DELETE_USER", "UPDATE_SETTINGS", "EXPORT_DATA", "IMPORT_DATA",
-];
+const actions = ["CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT", "PATCH"];
+const entities = ["Product", "Sale", "User", "Customer", "Order", "Inventory"];
 
 export default function AdminAuditPage() {
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
+  const [selectedEntity, setSelectedEntity] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
-  const filteredLogs = auditLogs.filter((log) => {
-    const matchesSearch = searchQuery === "" ||
-      log.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      log.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesAction = !selectedAction || log.action === selectedAction;
-    return matchesSearch && matchesAction;
-  });
+  useEffect(() => {
+    loadLogs();
+  }, [selectedAction, selectedEntity, currentPage, dateFrom, dateTo]);
 
-  const getActionIcon = (action: string) => {
-    if (action.includes("LOGIN")) return LogIn;
-    if (action.includes("LOGOUT")) return LogOut;
-    if (action.includes("ORDER")) return ShoppingCart;
-    if (action.includes("PRODUCT")) return Package;
-    if (action.includes("USER")) return User;
-    if (action.includes("SETTINGS")) return Settings;
-    if (action.includes("EXPORT") || action.includes("IMPORT")) return FileText;
-    return FileText;
+  const loadLogs = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await auditApi.list({
+        action: selectedAction || undefined,
+        entity: selectedEntity || undefined,
+        from: dateFrom || undefined,
+        to: dateTo || undefined,
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
+      });
+      setLogs(response.data);
+      setTotal(response.total);
+    } catch (err) {
+      setError("Failed to load audit logs");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const getActionColor = (action: string) => {
-    if (action.includes("CREATE") || action.includes("LOGIN")) return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
-    if (action.includes("UPDATE")) return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
-    if (action.includes("DELETE")) return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-    if (action.includes("LOGOUT")) return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400";
-    return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400";
-  };
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   return (
     <div className="space-y-6 p-6 max-w-[1600px] mx-auto">
@@ -85,127 +81,163 @@ export default function AdminAuditPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Audit Logs</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Track all system activities and changes.</p>
         </div>
-        <Button variant="outline">
-          <Download className="mr-2 h-4 w-4" />
-          Export Logs
-        </Button>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, i) => (
-          <div key={i} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-500 dark:text-gray-400">{stat.label}</span>
-              <stat.icon className={`h-5 w-5 ${
-                stat.color === 'blue' ? 'text-blue-500' :
-                stat.color === 'green' ? 'text-emerald-500' :
-                stat.color === 'purple' ? 'text-purple-500' :
-                'text-amber-500'
-              }`} />
-            </div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">{stat.sub}</div>
-          </div>
-        ))}
       </div>
 
       {/* Filters */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search logs..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 dark:bg-gray-800 dark:border-gray-700"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <Plus className={`h-4 w-4 mr-2 transition-transform ${showFilters ? "rotate-45" : ""}`} />
-              Filters
-            </Button>
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-          </div>
-        </div>
-
-        {showFilters && (
-          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={selectedAction === null ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedAction(null)}
-                className={selectedAction === null ? "bg-[#003D9B] dark:bg-[#0066FF]" : ""}
-              >
-                All
-              </Button>
-              {actionTypes.map((action) => (
-                <Button
-                  key={action}
-                  variant={selectedAction === action ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedAction(action)}
-                  className={selectedAction === action ? "bg-[#003D9B] dark:bg-[#0066FF]" : ""}
-                >
-                  {action.replace("_", " ")}
-                </Button>
-              ))}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(1); }}
+                className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                placeholder="From Date"
+              />
+            </div>
+            <div>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => { setDateTo(e.target.value); setCurrentPage(1); }}
+                className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                placeholder="To Date"
+              />
             </div>
           </div>
-        )}
-      </div>
-
-      {/* Table */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 dark:bg-gray-800/50">
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Action</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">User</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Description</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">IP Address</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Timestamp</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredLogs.map((log) => {
-                const ActionIcon = getActionIcon(log.action);
-                return (
-                  <tr key={log.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <ActionIcon className="h-4 w-4 text-gray-400" />
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getActionColor(log.action)}`}>
-                          {log.action.replace("_", " ")}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">{log.user}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{log.email}</p>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-gray-600 dark:text-gray-400 max-w-[250px] truncate">{log.description}</td>
-                    <td className="py-3 px-4 font-mono text-sm text-gray-500 dark:text-gray-400">{log.ip}</td>
-                    <td className="py-3 px-4 text-gray-500 dark:text-gray-400">{log.timestamp}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                <Filter className="mr-2 h-4 w-4" />
+                {selectedAction || "All Actions"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+              <DropdownMenuItem onClick={() => { setSelectedAction(null); setCurrentPage(1); }}>All Actions</DropdownMenuItem>
+              {actions.map((action) => (
+                <DropdownMenuItem key={action} onClick={() => { setSelectedAction(action); setCurrentPage(1); }}>{action}</DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                <Filter className="mr-2 h-4 w-4" />
+                {selectedEntity || "All Entities"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+              <DropdownMenuItem onClick={() => { setSelectedEntity(null); setCurrentPage(1); }}>All Entities</DropdownMenuItem>
+              {entities.map((entity) => (
+                <DropdownMenuItem key={entity} onClick={() => { setSelectedEntity(entity); setCurrentPage(1); }}>{entity}</DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
+
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-[#003D9B] dark:text-[#0066FF]" />
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="text-center py-12 text-red-500">
+          <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+          <p>{error}</p>
+        </div>
+      )}
+
+      {/* Audit Logs Table */}
+      {!loading && !error && (
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-800">
+                  <TableHead className="text-gray-600 dark:text-gray-400 font-medium">User</TableHead>
+                  <TableHead className="text-gray-600 dark:text-gray-400 font-medium">Action</TableHead>
+                  <TableHead className="text-gray-600 dark:text-gray-400 font-medium">Entity</TableHead>
+                  <TableHead className="text-gray-600 dark:text-gray-400 font-medium">Entity ID</TableHead>
+                  <TableHead className="text-gray-600 dark:text-gray-400 font-medium">Timestamp</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {logs.map((log) => {
+                  const actionBadge = getActionBadge(log.action);
+                  return (
+                    <TableRow key={log.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-gray-400" />
+                          <span className="text-gray-900 dark:text-white">{log.userName || log.userId}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={actionBadge.className}>{actionBadge.label}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-gray-900 dark:text-white">{log.entity}</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-gray-500 dark:text-gray-400 font-mono text-sm">{log.entityId || "-"}</span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                          <Clock className="h-4 w-4" />
+                          {log.createdAt ? new Date(log.createdAt).toLocaleString() : "-"}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800">
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, total)} of {total} logs
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setCurrentPage(page)}
+                    className={currentPage === page ? "bg-[#003D9B] dark:bg-[#0066FF] text-white" : ""}
+                  >
+                    {page}
+                  </Button>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -7,3 +7,5 @@ export * from "./customers";
 export * from "./analytics";
 export * from "./tenants";
 export * from "./users";
+export * from "./admin";
+export * from "./audit";

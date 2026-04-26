@@ -22,7 +22,6 @@ export default function LoginPage() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Clear any existing session on login page mount
   useEffect(() => {
     logout();
     setMounted(true);
@@ -30,48 +29,41 @@ export default function LoginPage() {
 
   const [selectedRole, setSelectedRole] = useState<"ADMIN" | "MANAGER" | "SALES_REP">("ADMIN");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
     
-    const loginAndRedirect = () => {
-      const role = selectedRole;
-      const roleNames: Record<string, string> = {
-        ADMIN: "Sarah Admin",
-        MANAGER: "Mike Manager",
-        SALES_REP: "John Sales",
-      };
-      const mockUser: User = {
-        userId: "1",
+    try {
+      const { authApi } = await import("@/lib/api/auth");
+      const response = await authApi.login({
         email: email || "demo@ptlpos.com",
-        name: roleNames[role] || "Demo User",
-        role: role,
-        tenantId: tenantId || "DEMO",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+        password: password,
+        tenantId: tenantId || undefined,
+      });
       
-      const tokens = {
-        access_token: "demo-access-token",
-        refresh_token: "demo-refresh-token",
-      };
-      
-      login(tokens, mockUser);
+      const { login } = useAuthStore.getState();
+      login(response, response.user, response.tenant || undefined);
       setIsLoading(false);
       
       setTimeout(() => {
-        if (role === "ADMIN") {
+        if (response.user.role === "ADMIN") {
           router.push("/admin/dashboard");
-        } else if (role === "MANAGER") {
+        } else if (response.user.role === "MANAGER") {
           router.push("/manager/dashboard");
         } else {
           router.push("/pos-terminal");
         }
       }, 150);
-    };
-
-    setTimeout(loginAndRedirect, 1500);
+    } catch (err: unknown) {
+      setIsLoading(false);
+      let message = "Invalid credentials";
+      if (typeof err === "object" && err !== null && "response" in err) {
+        const axiosErr = err as { response?: { data?: { message?: string } } };
+        message = axiosErr.response?.data?.message || message;
+      }
+      setError(message);
+    }
   };
 
   if (!mounted) {

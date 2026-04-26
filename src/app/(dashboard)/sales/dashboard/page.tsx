@@ -1,12 +1,14 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, DollarSign, Package, Clock, CheckCircle, TrendingUp, Receipt, ArrowRight, ArrowUpRight } from "lucide-react";
+import { ShoppingCart, DollarSign, Package, Clock, CheckCircle, TrendingUp, Receipt, ArrowRight, ArrowUpRight, Loader2, Warehouse } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "@/components/providers/theme-provider";
 import { useAuthStore } from "@/stores";
-import { cn } from "@/lib/utils";
+import { analyticsApi } from "@/lib/api/analytics";
+import type { DashboardAnalytics } from "@/types/api";
 
 const statsCards = [
   {
@@ -15,6 +17,7 @@ const statsCards = [
     change: "+8%",
     icon: ShoppingCart,
     color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400",
+    link: "/pos-terminal",
   },
   {
     title: "Orders",
@@ -22,6 +25,7 @@ const statsCards = [
     change: "Today",
     icon: Receipt,
     color: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
+    link: "/sales/sales",
   },
   {
     title: "Pending",
@@ -30,42 +34,50 @@ const statsCards = [
     icon: Clock,
     color: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400",
   },
-  {
-    title: "Completed",
-    value: "9",
-    change: "Today",
-    icon: CheckCircle,
-    color: "bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400",
-  },
-];
-
-const recentSales = [
-  { id: "SAL-2024-1234", customer: "John Doe", items: 3, total: 234.5, status: "Completed", time: "10 min ago" },
-  { id: "SAL-2024-1233", customer: "Jane Smith", items: 2, total: 156.0, status: "Pending", time: "25 min ago" },
-  { id: "SAL-2024-1232", customer: "Mike Johnson", items: 1, total: 89.99, status: "Completed", time: "1 hour ago" },
-  { id: "SAL-2024-1231", customer: "Walk-in", items: 4, total: 312.0, status: "Completed", time: "2 hours ago" },
 ];
 
 export default function SalesDashboardPage() {
   const { theme } = useTheme();
-  const isDark = theme === "dark";
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "Completed":
-        return { color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" };
-      case "Pending":
-        return { color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" };
-      default:
-        return { color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300" };
+  useEffect(() => {
+    loadAnalytics();
+  }, []);
+
+  const loadAnalytics = async () => {
+    setLoading(true);
+    try {
+      const data = await analyticsApi.getDashboard();
+      setAnalytics(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getUserInitial = (name?: string) => {
-    if (!name) return "U";
-    const parts = name.split(" ");
-    return parts.length > 1 ? parts[0][0] + parts[1][0] : parts[0].slice(0, 2);
+  const quickActions = [
+    { label: "New Sale", icon: ShoppingCart, href: "/pos-terminal", bg: "hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-900/20" },
+    { label: "Sales History", icon: Receipt, href: "/sales/sales", bg: "hover:bg-emerald-50 hover:border-emerald-200 dark:hover:bg-emerald-900/20" },
+  ];
+
+  const recentSales = [
+    { id: "SALE-001", customer: "Walk-in Customer", total: "$45.00", status: "COMPLETED", items: 2 },
+    { id: "SALE-002", customer: "John Doe", total: "$89.50", status: "COMPLETED", items: 3 },
+    { id: "SALE-003", customer: "Jane Smith", total: "$156.00", status: "PENDING", items: 4 },
+  ];
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "COMPLETED":
+        return { label: "Completed", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" };
+      case "PENDING":
+        return { label: "Pending", className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" };
+      default:
+        return { label: status, className: "bg-gray-100 text-gray-700" };
+    }
   };
 
   return (
@@ -75,116 +87,76 @@ export default function SalesDashboardPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Welcome back, {user?.name || "Sales Rep"}!</p>
         </div>
-        <Link href="/pos-terminal">
-          <Button className="bg-[#003D9B] hover:bg-[#003D9B]/90 text-white dark:bg-[#0066FF] dark:hover:bg-[#0066FF]/90">
-            <ShoppingCart className="mr-2 h-4 w-4" />
-            New Sale
-          </Button>
-        </Link>
+        <Button onClick={loadAnalytics} className="bg-[#003D9B] hover:bg-[#003D9B]/90 dark:bg-[#0066FF] dark:hover:bg-[#0066FF]/90 text-white">
+          <TrendingUp className="mr-2 h-4 w-4" />
+          Refresh
+        </Button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {statsCards.map((stat) => (
-          <div 
-            key={stat.title}
-            className={cn(
-              "rounded-xl border p-4 transition-all duration-200",
-              isDark ? "bg-gray-900 border-gray-800" : "bg-white border-gray-100"
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <div className={cn("p-2 rounded-lg", stat.color)}>
-                <stat.icon className="h-5 w-5" />
-              </div>
-              <div>
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-[#003D9B] dark:text-[#0066FF]" />
+        </div>
+      )}
+
+      {!loading && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {statsCards.map((stat, index) => (
+              <div
+                key={index}
+                className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 hover:shadow-lg transition-all"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`p-3 rounded-lg ${stat.color}`}>
+                    <stat.icon className="h-6 w-6" />
+                  </div>
+                </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">{stat.title}</p>
-                <div className="flex items-center gap-1">
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">({stat.change})</span>
-                </div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stat.value}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{stat.change}</p>
               </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className={cn(
-          "rounded-xl border",
-          isDark ? "bg-gray-900 border-gray-800" : "bg-white border-gray-100"
-        )}>
-          <div className={cn("p-5 border-b", isDark ? "border-gray-800" : "border-gray-100")}>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Sales</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Latest transactions</p>
+          <div className="grid grid-cols-2 gap-4">
+            {quickActions.map((action, index) => (
+              <Link
+                key={index}
+                href={action.href}
+                className={`bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 hover:shadow-lg transition-all cursor-pointer ${action.bg}`}
+              >
+                <action.icon className="h-6 w-6 text-gray-600 dark:text-gray-400 mb-2" />
+                <p className="font-medium text-gray-900 dark:text-white text-sm">{action.label}</p>
+              </Link>
+            ))}
           </div>
-          <div className="p-5 space-y-3">
-            {recentSales.map((sale) => {
-              const status = getStatusBadge(sale.status);
-              return (
-                <div 
-                  key={sale.id}
-                  className={cn(
-                    "flex items-center justify-between p-3 rounded-lg border group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors",
-                    isDark ? "border-gray-800" : "border-gray-100"
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={cn(
-                      "w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold",
-                      isDark ? "bg-blue-900/30 text-blue-400" : "bg-blue-100 text-blue-600"
-                    )}>
-                      {getUserInitial(sale.customer)}
-                    </div>
+
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Sales</h2>
+            <div className="space-y-3">
+              {recentSales.map((sale) => {
+                const badge = getStatusBadge(sale.status);
+                return (
+                  <div key={sale.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-white">{sale.id}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{sale.customer}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{sale.customer}</p>
+                      <p className="text-sm text-gray-500">{sale.id} • {sale.items} items</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-gray-900 dark:text-white">${sale.total}</p>
+                      <Badge className={badge.className}>{badge.label}</Badge>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900 dark:text-white">${sale.total.toFixed(2)}</p>
-                    <div className="flex items-center gap-2">
-                      <Badge className={cn("text-xs", status.color)}>{sale.status}</Badge>
-                      <span className="text-xs text-gray-400 dark:text-gray-500">{sale.time}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="p-5 pt-0">
-            <Link href="/sales/sales">
-              <Button variant="outline" className="w-full">
-                View All Sales
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+                );
+              })}
+            </div>
+            <Link href="/sales/sales" className="flex items-center justify-center gap-2 mt-4 text-sm text-[#003D9B] dark:text-[#0066FF] hover:underline">
+              View all sales <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-        </div>
-
-        <div className={cn(
-          "rounded-xl border",
-          isDark ? "bg-gray-900 border-gray-800" : "bg-white border-gray-100"
-        )}>
-          <div className={cn("p-5 border-b", isDark ? "border-gray-800" : "border-gray-100")}>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Quick Actions</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Common tasks</p>
-          </div>
-          <div className="p-5 grid grid-cols-2 gap-3">
-            <Link href="/pos-terminal">
-              <Button variant="outline" className="w-full h-20 flex flex-col gap-1">
-                <ShoppingCart className="h-5 w-5" />
-                <span className="text-xs">New Sale</span>
-              </Button>
-            </Link>
-            <Link href="/sales/sales">
-              <Button variant="outline" className="w-full h-20 flex flex-col gap-1">
-                <Receipt className="h-5 w-5" />
-                <span className="text-xs">View Sales</span>
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }

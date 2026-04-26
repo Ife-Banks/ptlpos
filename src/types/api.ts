@@ -2,7 +2,7 @@
 // USER & AUTH TYPES
 // ===========================================
 
-export type UserRole = "ADMIN" | "MANAGER" | "SALES_REP";
+export type UserRole = "ADMIN" | "MANAGER" | "SALES_REP" | "SUPER_ADMIN";
 
 export interface User {
   userId: string;
@@ -21,12 +21,17 @@ export interface AuthTokens {
 
 export interface AuthResponse extends AuthTokens {
   user: User;
+  tenant?: {
+    id: string;
+    name: string;
+  };
 }
 
 export interface LoginCredentials {
   email: string;
   password: string;
   tenantId?: string;
+  saleId?: string;
 }
 
 export interface RegisterData {

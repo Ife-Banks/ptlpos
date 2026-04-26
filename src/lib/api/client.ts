@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from "ax
 import { parseJSON } from "@/lib/utils";
 import type { ApiError, AuthTokens } from "@/types/api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.ptlpos.com/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://ptlpos.onrender.com/api";
 
 const ACCESS_TOKEN_KEY = "ptlpos_access_token";
 const REFRESH_TOKEN_KEY = "ptlpos_refresh_token";
@@ -29,6 +29,14 @@ export const clearTokens = (): void => {
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  localStorage.removeItem("ptlpos_tenant");
+};
+
+export const clearAuth = (): void => {
+  clearTokens();
+  if (typeof window !== "undefined") {
+    window.location.href = "/login";
+  }
 };
 
 export const getStoredUser = () => {

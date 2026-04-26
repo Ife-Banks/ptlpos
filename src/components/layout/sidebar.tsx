@@ -22,6 +22,7 @@ import {
   ChevronRight,
   LogOut,
   Receipt,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -35,6 +36,15 @@ const adminNavItems = [
   { href: "/admin/production", label: "Production", icon: Factory },
   { href: "/admin/settings", label: "Settings", icon: Settings },
   { href: "/admin/audit", label: "Audit Logs", icon: Receipt },
+];
+
+const superAdminNavItems = [
+  { href: "/super-admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/super-admin/tenants", label: "Tenants", icon: Building2 },
+  { href: "/super-admin/subscriptions", label: "Subscriptions", icon: DollarSign },
+  { href: "/super-admin/plans", label: "Plans", icon: Package },
+  { href: "/super-admin/tickets", label: "Tickets", icon: ClipboardList },
+  { href: "/super-admin/analytics", label: "Analytics", icon: BarChart3 },
 ];
 
 const managerNavItems = [
@@ -64,6 +74,9 @@ export function Sidebar() {
   switch (role) {
     case "ADMIN":
       navItems = adminNavItems;
+      break;
+    case "SUPER_ADMIN":
+      navItems = superAdminNavItems;
       break;
     case "MANAGER":
       navItems = managerNavItems;

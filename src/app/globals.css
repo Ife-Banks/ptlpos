@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 @import "tailwindcss";
 
 /* Tailwind v4 dark mode - enable class-based dark mode */
@@ -106,7 +107,7 @@ html[data-theme="dark"] {
   --color-border-light: #e5e7eb;
    
   /* --- Typography --- */
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Geist", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", Menlo, monospace;
   
   /* --- Spacing (8pt system) --- */

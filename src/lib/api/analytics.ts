@@ -62,4 +62,14 @@ export const importsApi = {
     });
     return response.data;
   },
+
+  suppliers: async (file: File): Promise<{ imported: number; failed: number; errors: string[] }> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    const response = await apiClient.post("/imports/suppliers", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  },
 };

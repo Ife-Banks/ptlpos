@@ -8,7 +8,7 @@ import type {
 
 export const authApi = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>("/auth/login", credentials);
+    const response = await apiClient.post<AuthResponse>("/auth/login/email", credentials);
     return response.data;
   },
 
@@ -29,6 +29,10 @@ export const authApi = {
 
   verifyEmail: async (token: string): Promise<void> => {
     await apiClient.post("/auth/email/verify", { token });
+  },
+
+  requestEmailVerify: async (email: string): Promise<void> => {
+    await apiClient.post("/auth/email/verify-request", { email });
   },
 
   requestPasswordReset: async (email: string): Promise<void> => {
