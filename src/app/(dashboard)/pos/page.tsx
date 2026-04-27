@@ -14,7 +14,8 @@ export default function POSPage() {
       router.push("/login");
       return;
     }
-    if (!["ADMIN", "MANAGER", "SALES_REP"].includes(user?.role || "")) {
+    const userRole = user?.role || "";
+    if (!["ADMIN", "MANAGER", "SALES_REP", "SUPPORT_ADMIN", "BILLING_ADMIN"].includes(userRole)) {
       router.push("/403");
       return;
     }

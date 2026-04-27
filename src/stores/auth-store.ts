@@ -93,7 +93,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   hasRole: (roles) => {
     const { user } = get();
     if (!user) return false;
-    return roles.includes(user.role);
+    return roles.includes(user.role as UserRole);
   },
 }));
 

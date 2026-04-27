@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -22,20 +22,15 @@ import {
   Edit,
   Download,
   CreditCard,
+  Loader2,
 } from "lucide-react";
+import { invoicesApi } from "@/lib/api/invoices";
+import type { Invoice } from "@/lib/api/invoices";
 
 const taxRates = [
   { id: "1", name: "VAT", rate: 7.5, type: "percentage", status: "active" },
   { id: "2", name: "Service Charge", rate: 5, type: "percentage", status: "active" },
   { id: "3", name: "Excise Duty", rate: 10, type: "percentage", status: "inactive" },
-];
-
-const invoices = [
-  { id: "INV-001", customer: "John Doe", amount: 12500.00, status: "paid", date: "Oct 15, 2024" },
-  { id: "INV-002", customer: "Jane Smith", amount: 8900.00, status: "pending", date: "Oct 14, 2024" },
-  { id: "INV-003", customer: "Mike Johnson", amount: 15600.00, status: "overdue", date: "Oct 10, 2024" },
-  { id: "INV-004", customer: "Sarah Wilson", amount: 6700.00, status: "paid", date: "Oct 13, 2024" },
-  { id: "INV-005", customer: "Tom Brown", amount: 23400.00, status: "pending", date: "Oct 15, 2024" },
 ];
 
 const quotationTemplates = [
@@ -46,8 +41,28 @@ const quotationTemplates = [
 
 export default function AdminTaxInvoicingPage() {
   const [activeTab, setActiveTab] = useState("taxes");
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(false);
   const [enableTax, setEnableTax] = useState(true);
   const [enableDiscounts, setEnableDiscounts] = useState(true);
+
+  useEffect(() => {
+    if (activeTab === "invoices") {
+      loadInvoices();
+    }
+  }, [activeTab]);
+
+  const loadInvoices = async () => {
+    setLoading(true);
+    try {
+      const response = await invoicesApi.list();
+      setInvoices(response.data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const tabs = [
     { id: "taxes", label: "Taxes", icon: Calculator },
@@ -160,19 +175,35 @@ export default function AdminTaxInvoicingPage() {
                 </tr>
               </thead>
               <tbody>
-                {invoices.map((invoice) => (
-                  <tr key={invoice.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                    <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">{invoice.id}</td>
-                    <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{invoice.customer}</td>
-                    <td className="py-3 px-4 text-gray-900 dark:text-white font-medium">${invoice.amount.toLocaleString()}</td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadge(invoice.status)}`}>
-                        {invoice.status}
-                      </span>
+                {loading ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-[#003D9B]" />
                     </td>
-                    <td className="py-3 px-4 text-gray-500 dark:text-gray-400">{invoice.date}</td>
                   </tr>
-                ))}
+                ) : !Array.isArray(invoices) || invoices.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-gray-500 dark:text-gray-400">
+                      No invoices found
+                    </td>
+                  </tr>
+                ) : (
+                  invoices.map((invoice) => (
+                    <tr key={invoice.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">{invoice.invoiceNumber}</td>
+                      <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{invoice.customer?.name || "-"}</td>
+                      <td className="py-3 px-4 text-gray-900 dark:text-white font-medium">${invoice.amount?.toLocaleString()}</td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadge(invoice.status)}`}>
+                          {invoice.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-gray-500 dark:text-gray-400">
+                        {invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString() : "-"}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

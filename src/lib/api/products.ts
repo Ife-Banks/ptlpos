@@ -6,6 +6,8 @@ import type {
   CompositeItem 
 } from "@/types/api";
 
+export type { Product };
+
 export const productsApi = {
   list: async (filters?: ProductFilters): Promise<PaginatedResponse<Product>> => {
     const params = new URLSearchParams();

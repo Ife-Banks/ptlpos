@@ -110,7 +110,7 @@ export default function SuperAdminDashboardPage() {
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`p-3 rounded-lg ${stat.color} bg-opacity-10`}>
-                  <stat.icon className={`h-6 w-6 ${stat.color.replace("bg-", "text-")}`} dark:text-white`} />
+                  <stat.icon className={`h-6 w-6 ${stat.color.replace("bg-", "text-")} dark:text-white`} />
                 </div>
                 <CheckCircle className="h-5 w-5 text-emerald-500" />
               </div>

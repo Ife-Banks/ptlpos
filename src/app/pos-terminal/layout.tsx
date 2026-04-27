@@ -29,8 +29,9 @@ export default function POSStandaloneLayout({
       return;
     }
 
-    const allowedRoles = ["ADMIN", "MANAGER", "SALES_REP"];
-    if (!allowedRoles.includes(user?.role || "")) {
+    const allowedRoles = ["ADMIN", "MANAGER", "SALES_REP", "SUPPORT_ADMIN", "BILLING_ADMIN"];
+    const userRole = user?.role || "";
+    if (!allowedRoles.includes(userRole)) {
       router.push("/403");
     }
   }, [isAuthenticated, user, pathname, router, mounted]);

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Loader2, ShoppingCart, ArrowRight, Zap, Shield, Mail, Lock, Check, Building2, Globe, Clock, HeadphonesIcon, User, CheckCircle, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Loader2, ShoppingCart, ArrowRight, Zap, Shield, Mail, Lock, Check, Building2, Globe, Clock, HeadphonesIcon, User, CheckCircle, ArrowLeft, MailOpen, RefreshCw } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { useTheme } from "@/components/providers/theme-provider";
 
@@ -17,6 +17,7 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [isEmailSent, setIsEmailSent] = useState(false);
 
   const [orgName, setOrgName] = useState("");
   const [orgEmail, setOrgEmail] = useState("");
@@ -56,17 +57,28 @@ export default function RegisterPage() {
 
     try {
       const { authApi } = await import("@/lib/api/auth");
+      
+      // Step 1: Register the organization and user
       await authApi.register({
         organizationName: orgName,
         name: userName,
         email: userEmail,
         password: password,
       });
+      
+      // Step 2: Request email verification after successful registration
+      try {
+        await authApi.requestEmailVerify(userEmail);
+      } catch (verifyErr) {
+        // Continue even if verification request fails (email service might not be configured)
+        console.error("Email verification request failed:", verifyErr);
+      }
+      
+      // Show success message asking user to verify email
+      setIsEmailSent(true);
       setSuccess(true);
       setIsLoading(false);
-      setTimeout(() => {
-        router.push("/login");
-      }, 2000);
+      // Don't redirect - user needs to verify their email first
     } catch (err: unknown) {
       setIsLoading(false);
       let message = "Registration failed. Please try again.";
@@ -108,25 +120,59 @@ export default function RegisterPage() {
               <span className="text-2xl font-bold">PTLPOS</span>
             </div>
             <h1 className="text-4xl font-bold mb-4 leading-tight">
-              Welcome to<br />
-              <span className="text-gradient-accent">PTLPOS</span>
+              Verify Your<br />
+              <span className="text-gradient-accent">Email</span>
             </h1>
             <p className="text-2xl text-white/80 mb-6 max-w-full">
-              Your enterprise retail management solution is ready.
+              Complete your registration by verifying your email address.
             </p>
           </div>
         </div>
         <div className="w-full lg:w-1/2 flex items-center justify-center p-4 md:p-8">
           <div className="w-full max-w-md text-center">
-            <div className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${isDark ? 'bg-green-900/30' : 'bg-green-100'}`}>
-              <CheckCircle className="w-10 h-10 text-green-500" />
+            <div className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${isDark ? 'bg-blue-900/30' : 'bg-blue-100'}`}>
+              <MailOpen className="w-10 h-10 text-blue-500" />
             </div>
             <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              Account Created!
+              {isEmailSent ? "Check Your Email!" : "Account Created!"}
             </h2>
             <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>
-              Redirecting to login...
+              {isEmailSent 
+                ? `We've sent a verification link to ${userEmail}` 
+                : "Redirecting to login..."
+              }
             </p>
+            {isEmailSent && (
+              <>
+                <p className={`text-sm mt-4 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                  Click the link in the email to verify your account. If you don't see the email, check your spam folder.
+                </p>
+                <button
+                  onClick={async () => {
+                    setIsLoading(true);
+                    try {
+                      const { authApi } = await import("@/lib/api/auth");
+                      await authApi.requestEmailVerify(userEmail);
+                    } catch (err) {
+                      console.error("Resend failed:", err);
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                  disabled={isLoading}
+                  className={`mt-6 flex items-center justify-center gap-2 ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-[#003D9B] hover:text-[#003D9B]/80'} text-sm`}
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  {isLoading ? "Sending..." : "Resend verification email"}
+                </button>
+                <button
+                  onClick={() => router.push("/login")}
+                  className={`mt-4 text-sm ${isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  Back to Login
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

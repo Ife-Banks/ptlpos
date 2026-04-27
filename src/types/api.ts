@@ -2,10 +2,10 @@
 // USER & AUTH TYPES
 // ===========================================
 
-export type UserRole = "ADMIN" | "MANAGER" | "SALES_REP" | "SUPER_ADMIN";
+export type UserRole = "ADMIN" | "MANAGER" | "SALES_REP" | "SUPER_ADMIN" | "SUPPORT_ADMIN" | "BILLING_ADMIN";
 
 export interface User {
-  userId: string;
+  id: string;
   tenantId: string;
   name: string;
   email: string;

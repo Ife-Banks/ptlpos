@@ -1,24 +1,37 @@
 "use client";
 
-import { Minus, Plus, Trash2, ShoppingCart, User, X, DollarSign, CreditCard, Wallet } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingCart, User, X, DollarSign, CreditCard, Wallet, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useTheme } from "@/components/providers/theme-provider";
-import type { SaleItem } from "@/types/api";
+
+interface SaleItem {
+  id: string;
+  productId: string;
+  product?: { id: string; name: string; price: number; sku: string };
+  quantity: number;
+  price: number;
+  total: number;
+  unitPrice: number;
+  discount?: number;
+  taxRate?: number;
+  taxAmount?: number;
+}
 
 interface CartPanelProps {
   items: SaleItem[];
   subtotal: number;
   tax: number;
   total: number;
-  attachedCustomer: { id: string; name: string } | null;
+  attachedCustomer: { id: string; name: string; phone?: string } | null;
   onUpdateQuantity: (itemId: string, quantity: number) => void;
   onRemoveItem: (itemId: string) => void;
   onAttachCustomer: () => void;
   onRemoveCustomer: () => void;
   onClearCart: () => void;
   onProceedToPayment: () => void;
+  onHold?: () => void;
   isProcessing?: boolean;
 }
 
@@ -34,6 +47,7 @@ export function CartPanel({
   onRemoveCustomer,
   onClearCart,
   onProceedToPayment,
+  onHold,
   isProcessing = false,
 }: CartPanelProps) {
   const { theme } = useTheme();
@@ -82,9 +96,16 @@ export function CartPanel({
           )}>
             <div className="flex items-center gap-2">
               <User className={cn("h-4 w-4", isDark ? "text-gray-400" : "text-gray-500")} />
-              <span className={cn("text-sm font-medium", isDark ? "text-white" : "text-gray-900")}>
-                {attachedCustomer.name}
-              </span>
+              <div className="flex flex-col">
+                <span className={cn("text-sm font-medium", isDark ? "text-white" : "text-gray-900")}>
+                  {attachedCustomer.name}
+                </span>
+                {attachedCustomer.phone && (
+                  <span className={cn("text-xs", isDark ? "text-gray-500" : "text-gray-500")}>
+                    {attachedCustomer.phone}
+                  </span>
+                )}
+              </div>
             </div>
             <Button
               variant="ghost"
@@ -132,13 +153,13 @@ export function CartPanel({
                     "font-medium text-sm truncate",
                     isDark ? "text-white" : "text-gray-900"
                   )}>
-                    {item.product?.name}
+                    {item.product?.name || "Product"}
                   </p>
                   <p className={cn(
                     "text-xs font-mono",
                     isDark ? "text-gray-500" : "text-gray-500"
                   )}>
-                    {formatCurrency(item.unitPrice || (item as any).price)} each
+                    {formatCurrency((item.unitPrice || item.price || 0))} each
                   </p>
                 </div>
 
@@ -192,11 +213,11 @@ export function CartPanel({
                     "font-semibold text-sm",
                     isDark ? "text-white" : "text-gray-900"
                   )}>
-                    {formatCurrency(item.total)}
+                    {formatCurrency(typeof item.total === 'number' ? item.total : 0)}
                   </p>
-                  {item.discount > 0 && (
+                  {(item.discount || 0) > 0 && (
                     <p className="text-xs text-emerald-600 dark:text-emerald-400">
-                      -{formatCurrency(item.discount)}
+                      -{formatCurrency(item.discount || 0)}
                     </p>
                   )}
                 </div>
@@ -224,7 +245,7 @@ export function CartPanel({
         </div>
 
         {/* Discount */}
-        {items.some(item => item.discount > 0) && (
+        {items.some(item => (item.discount || 0) > 0) && (
           <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
             <span>Discount</span>
             <span>-{formatCurrency(items.reduce((sum, item) => sum + (item.discount || 0), 0))}</span>
@@ -240,31 +261,35 @@ export function CartPanel({
           <span className="text-[#003D9B] dark:text-[#0066FF]">{formatCurrency(total)}</span>
         </div>
 
-        {/* Payment Methods Preview */}
-        <div className="flex items-center justify-center gap-2 text-xs text-gray-400 py-2">
-          <DollarSign className="h-3 w-3" />
-          <span>Cash</span>
-          <span>•</span>
-          <CreditCard className="h-3 w-3" />
-          <span>Card</span>
-          <span>•</span>
-          <Wallet className="h-3 w-3" />
-          <span>Other</span>
-        </div>
-
-        {/* Pay Button */}
-        <Button
-          onClick={onProceedToPayment}
-          disabled={items.length === 0 || isProcessing}
-          className={cn(
-            "w-full h-12 text-lg font-bold rounded-xl transition-all",
-            "bg-[#003D9B] hover:bg-[#003D9B]/90 dark:bg-[#0066FF] dark:hover:bg-[#0066FF]/90",
-            "text-white shadow-lg hover:shadow-xl",
-            (items.length === 0 || isProcessing) && "opacity-50 cursor-not-allowed"
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          {onHold && items.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={onHold}
+              disabled={items.length === 0 || isProcessing}
+              className={cn(
+                "flex-1 h-10 text-sm",
+                isDark ? "border-gray-700 hover:bg-gray-800" : ""
+              )}
+            >
+              <Pause className="h-4 w-4 mr-1" />
+              Hold
+            </Button>
           )}
-        >
-          {isProcessing ? "Processing..." : `Pay ${formatCurrency(total)}`}
-        </Button>
+          <Button
+            onClick={onProceedToPayment}
+            disabled={items.length === 0 || isProcessing}
+            className={cn(
+              "flex-1 h-10 text-sm font-bold rounded-xl transition-all",
+              "bg-[#003D9B] hover:bg-[#003D9B]/90 dark:bg-[#0066FF] dark:hover:bg-[#0066FF]/90",
+              "text-white shadow-lg hover:shadow-xl",
+              (items.length === 0 || isProcessing) && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            {isProcessing ? "Processing..." : `Pay ${formatCurrency(total)}`}
+          </Button>
+        </div>
       </div>
     </div>
   );

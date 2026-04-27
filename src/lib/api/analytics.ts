@@ -34,6 +34,13 @@ export const exportsApi = {
     return response.data;
   },
 
+  suppliers: async (): Promise<Blob> => {
+    const response = await apiClient.get("/exports/suppliers", {
+      responseType: "blob",
+    });
+    return response.data;
+  },
+
   inventory: async (): Promise<Blob> => {
     const response = await apiClient.get("/exports/inventory", {
       responseType: "blob",

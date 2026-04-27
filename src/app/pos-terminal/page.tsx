@@ -1,17 +1,31 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { RotateCcw, Pause, UserPlus, Store, Bell, ShoppingCart } from "lucide-react";
+import { RotateCcw, Pause, UserPlus, Store, Bell, ShoppingCart, Loader2, X, Search, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ProductSearch } from "@/components/pos/product-search";
 import { ProductCard } from "@/components/pos/product-card";
 import { CartPanel } from "@/components/pos/cart-panel";
 import { PaymentModal } from "@/components/pos/payment-modal";
+import { CustomerSearchModal } from "@/components/pos/customer-search-modal";
+import { HeldSalesModal } from "@/components/pos/held-sales-modal";
 import { usePOSStore } from "@/stores/pos-store";
 import { useAuthStore } from "@/stores";
 import { useTheme } from "@/components/providers/theme-provider";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
+import { productsApi } from "@/lib/api/products";
+import { categoriesApi } from "@/lib/api/categories";
+import { salesApi } from "@/lib/api/sales";
+
+function parsePrice(price: number | string | { amount?: number } | undefined | null): number {
+  if (price === undefined || price === null) return 0;
+  if (typeof price === 'number') return price;
+  if (typeof price === 'string') return parseFloat(price) || 0;
+  if (typeof price === 'object' && price !== null) return price.amount || 0;
+  return 0;
+}
 
 interface CartItem {
   id: string;
@@ -27,74 +41,121 @@ interface CartItem {
   taxAmount: number;
 }
 
-const mockProducts = [
-  { id: "1", name: "Premium Widget A", sku: "WGT-001", price: 25.00, category: "Electronics", stock: 45 },
-  { id: "2", name: "Smart Gadget X", sku: "GDG-012", price: 49.99, category: "Electronics", stock: 23 },
-  { id: "3", name: "Component Y", sku: "CMP-034", price: 15.00, category: "Parts", stock: 89 },
-  { id: "4", name: "Part Z", sku: "PRT-056", price: 8.50, category: "Parts", stock: 156 },
-  { id: "5", name: "Assembly Kit Pro", sku: "ASM-001", price: 125.00, category: "Kits", stock: 12 },
-  { id: "6", name: "Power Supply Unit", sku: "PWR-012", price: 35.00, category: "Electronics", stock: 34 },
-  { id: "7", name: "Display Module AMOLED", sku: "DSP-034", price: 89.00, category: "Electronics", stock: 18 },
-  { id: "8", name: "Cable Set Deluxe", sku: "CBL-001", price: 12.00, category: "Accessories", stock: 67 },
-  { id: "9", name: "Connector Pack", sku: "CNT-001", price: 3.50, category: "Parts", stock: 234 },
-  { id: "10", name: "Mounting Kit", sku: "MNT-001", price: 18.00, category: "Kits", stock: 45 },
-  { id: "11", name: "Sensor Module", sku: "SNS-001", price: 45.00, category: "Electronics", stock: 28 },
-  { id: "12", name: "Switch Board", sku: "SWT-001", price: 22.00, category: "Electronics", stock: 56 },
-  { id: "13", name: "LED Panel 50in", sku: "LED-001", price: 65.00, category: "Electronics", stock: 15 },
-  { id: "14", name: "Wiring Harness", sku: "WHR-001", price: 28.00, category: "Parts", stock: 78 },
-  { id: "15", name: "Capacitor Pack", sku: "CAP-010", price: 5.00, category: "Parts", stock: 312 },
-  { id: "16", name: "USB-C Hub", sku: "USB-001", price: 15.00, category: "Accessories", stock: 89 },
-];
+interface Product {
+  id: string;
+  name: string;
+  sku: string;
+  price: number;
+  category?: string;
+  categoryId?: string;
+  stock?: number;
+  imageUrl?: string;
+}
 
-const categories = ["All", "Electronics", "Parts", "Kits", "Accessories"];
+interface Category {
+  id: string;
+  name: string;
+}
 
 export default function POSTerminalPage() {
   const { user } = useAuthStore();
   const { theme } = useTheme();
   const { isPaymentModalOpen, setPaymentModalOpen } = usePOSStore();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [attachedCustomer, setAttachedCustomer] = useState<{ id: string; name: string } | null>(null);
+  const [attachedCustomer, setAttachedCustomer] = useState<{ id: string; name: string; phone?: string } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [currentSaleId, setCurrentSaleId] = useState<string | null>(null);
+  
+  // Modals
+  const [showCustomerSearch, setShowCustomerSearch] = useState(false);
+  const [showHeldSales, setShowHeldSales] = useState(false);
 
   const isDark = theme === "dark";
 
-  const filteredProducts = mockProducts.filter((product) => {
-    return selectedCategory === "All" || product.category === selectedCategory;
+  // Fetch products and categories
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoadingProducts(true);
+      try {
+        const [productsRes, categoriesRes] = await Promise.all([
+          productsApi.list({ limit: 100 }).catch(() => ({ data: [], meta: { total: 0 } })),
+          categoriesApi.list({ limit: 50 }).catch(() => ({ data: [], meta: { total: 0 } })),
+        ]);
+        
+        const productsData = productsRes.data || [];
+        const categoriesData = categoriesRes.data || [];
+        
+        setProducts(productsData);
+        setCategories(categoriesData);
+      } catch (err) {
+        console.error("Failed to load POS data:", err);
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Filter products by category
+  const filteredProducts = products.filter((product) => {
+    if (selectedCategory === "All") return true;
+    const catName = typeof product.category === 'string' ? product.category : (product.category as any)?.name;
+    return catName === selectedCategory || product.categoryId === selectedCategory;
   });
 
+  // Calculate cart totals
   const cartSubtotal = cartItems.reduce((sum, item) => sum + (item.total || 0), 0);
-  const cartTax = cartSubtotal * 0.075;
+  const cartTax = cartItems.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
   const cartTotal = cartSubtotal + cartTax;
 
-  const handleSelectProduct = useCallback((product: { id: string; name: string; price: number; sku: string }) => {
+  // Select product and add to cart
+  const handleSelectProduct = useCallback(async (product: Product) => {
+    const price = parsePrice(product.price);
+    
     setCartItems((prev) => {
       const existing = prev.find((item) => item.productId === product.id);
       if (existing) {
-        return prev.map((item) =>
+        const newQty = existing.quantity + 1;
+        const newTotal = newQty * price;
+        const newTax = newTotal * 0.075;
+        const updated = prev.map((item) =>
           item.productId === product.id
-            ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.price }
+            ? { 
+                ...item, 
+                quantity: newQty,
+                total: newTotal,
+                taxAmount: newTax,
+              }
             : item
         );
+        return updated;
       }
+      const itemTotal = price;
+      const itemTax = itemTotal * 0.075;
       return [
         ...prev,
         {
-          id: product.id,
+          id: `temp-${Date.now()}-${product.id}`,
           productId: product.id,
-          product: { id: product.id, name: product.name, price: product.price, sku: product.sku },
+          product: { id: product.id, name: product.name, price, sku: product.sku || "" },
           quantity: 1,
-          price: product.price,
-          total: product.price,
-          saleId: "",
-          unitPrice: product.price,
+          price,
+          total: itemTotal,
+          saleId: currentSaleId || "",
+          unitPrice: price,
           discount: 0,
           taxRate: 7.5,
-          taxAmount: product.price * 0.075,
+          taxAmount: itemTax,
         },
       ];
     });
-  }, []);
+  }, [currentSaleId]);
 
+  // Update quantity
   const handleUpdateQuantity = useCallback((itemId: string, quantity: number) => {
     setCartItems((prev) => {
       if (quantity < 1) {
@@ -113,19 +174,115 @@ export default function POSTerminalPage() {
     });
   }, []);
 
+  // Remove item
   const handleRemoveItem = useCallback((itemId: string) => {
     setCartItems((prev) => prev.filter((item) => item.id !== itemId));
   }, []);
 
+  // Clear cart
   const handleClearCart = useCallback(() => {
     setCartItems([]);
     setAttachedCustomer(null);
+    setCurrentSaleId(null);
   }, []);
 
+  // Attach customer
+  const handleAttachCustomer = (customer: { id: string; name: string; phone?: string }) => {
+    setAttachedCustomer(customer);
+    setShowCustomerSearch(false);
+  };
+
+  // Hold sale
+  const handleHoldSale = useCallback(async () => {
+    if (cartItems.length === 0) return;
+    
+    setProcessing(true);
+    try {
+      const sale = await salesApi.create({
+        customerId: attachedCustomer?.id,
+        items: cartItems.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.unitPrice,
+        })),
+      });
+      
+      await salesApi.hold(sale.id);
+      handleClearCart();
+      setShowHeldSales(true);
+    } catch (err) {
+      console.error("Failed to hold sale:", err);
+    } finally {
+      setProcessing(false);
+    }
+  }, [cartItems, attachedCustomer, handleClearCart]);
+
+  // Resume held sale
+  const handleResumeSale = useCallback((sale: any) => {
+    const items: CartItem[] = sale.items.map((item: any) => ({
+      id: `temp-${Date.now()}-${item.productId}`,
+      productId: item.productId,
+      product: {
+        id: item.productId,
+        name: item.product?.name || "Product",
+        price: item.price,
+        sku: item.product?.sku || "",
+      },
+      quantity: item.quantity,
+      price: item.price,
+      total: item.price * item.quantity,
+      saleId: sale.id,
+      unitPrice: item.price,
+      discount: item.discount || 0,
+      taxRate: item.taxRate || 7.5,
+      taxAmount: (item.price * item.quantity) * ((item.taxRate || 7.5) / 100),
+    }));
+    
+    setCartItems(items);
+    setCurrentSaleId(sale.id);
+    if (sale.customer) {
+      setAttachedCustomer({
+        id: sale.customer.id,
+        name: sale.customer.name,
+        phone: sale.customer.phone,
+      });
+    }
+    setShowHeldSales(false);
+  }, []);
+
+  // Complete payment
   const handlePaymentComplete = useCallback(async () => {
-    setPaymentModalOpen(false);
-    handleClearCart();
-  }, [setPaymentModalOpen, handleClearCart]);
+    if (cartItems.length === 0) return;
+    
+    setProcessing(true);
+    try {
+      let saleId = currentSaleId;
+      
+      if (!saleId) {
+        const sale = await salesApi.create({
+          customerId: attachedCustomer?.id,
+          items: cartItems.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            price: item.unitPrice,
+          })),
+        });
+        saleId = sale.id;
+      }
+      
+      await salesApi.complete(saleId!, {
+        paymentMethod: "CASH",
+        paidAmount: cartTotal,
+      });
+      
+      setPaymentModalOpen(false);
+      handleClearCart();
+    } catch (err) {
+      console.error("Failed to complete sale:", err);
+    } finally {
+      setProcessing(false);
+    }
+  }, [cartItems, attachedCustomer, cartTotal, currentSaleId, setPaymentModalOpen, handleClearCart]);
 
   const getUserInitial = (name?: string) => {
     if (!name) return "U";
@@ -149,12 +306,17 @@ export default function POSTerminalPage() {
           </div>
           <div className={cn("h-6 w-px bg-gray-300 dark:bg-gray-700")} />
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className={isDark ? "text-gray-300" : "text-gray-600"}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowCustomerSearch(true)}
+              className={isDark ? "text-gray-300" : "text-gray-600"}
+            >
               <UserPlus className="h-4 w-4 mr-1" />
               Customer
             </Button>
             <Link 
-              href={user?.role === "ADMIN" ? "/admin/dashboard" : user?.role === "MANAGER" ? "/manager/dashboard" : "/sales/dashboard"}
+              href={["ADMIN", "BILLING_ADMIN"].includes(user?.role || "") ? "/admin/dashboard" : ["MANAGER", "SUPPORT_ADMIN"].includes(user?.role || "") ? "/manager/dashboard" : "/sales/dashboard"}
               className={cn("flex items-center gap-1 px-2 py-1 rounded border text-sm hover:underline", isDark ? "bg-gray-800 border-gray-700 text-gray-300" : "bg-gray-50 border-gray-200 text-gray-600")}
             >
               <Store className="h-3 w-3" />
@@ -163,7 +325,12 @@ export default function POSTerminalPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="text-emerald-600">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setShowHeldSales(true)}
+            className="text-emerald-600"
+          >
             <Pause className="h-4 w-4 mr-1" />
             Hold
           </Button>
@@ -191,62 +358,101 @@ export default function POSTerminalPage() {
               </Button>
             </div>
             {/* Categories */}
-            <div className="flex gap-2 overflow-x-auto">
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              <button
+                onClick={() => setSelectedCategory("All")}
+                className={cn(
+                  "px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
+                  selectedCategory === "All"
+                    ? "bg-[#003D9B] dark:bg-[#0066FF] text-white"
+                    : isDark ? "bg-gray-800 text-gray-400 hover:bg-gray-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                )}
+              >
+                All
+              </button>
               {categories.map((cat) => (
                 <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.name)}
                   className={cn(
-                    "px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap",
-                    selectedCategory === cat
+                    "px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
+                    selectedCategory === cat.name
                       ? "bg-[#003D9B] dark:bg-[#0066FF] text-white"
-                      : isDark ? "bg-gray-800 text-gray-400" : "bg-gray-100 text-gray-600"
+                      : isDark ? "bg-gray-800 text-gray-400 hover:bg-gray-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   )}
                 >
-                  {cat}
+                  {cat.name}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Grid */}
+          {/* Product Grid */}
           <div className="flex-1 overflow-auto p-3">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onClick={() => handleSelectProduct(product)}
-                />
-              ))}
-            </div>
+            {loadingProducts ? (
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin text-[#003D9B]" />
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                <ShoppingCart className="h-12 w-12 mb-3 opacity-50" />
+                <p className="text-lg font-medium">No products found</p>
+                <p className="text-sm text-gray-400 mt-1">Add products in the admin panel</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                {filteredProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onClick={() => handleSelectProduct(product)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Cart */}
         <div className={cn("w-[340px]", isDark ? "bg-gray-900" : "bg-white")}>
           <CartPanel
-            items={cartItems as any}
+            items={cartItems}
             subtotal={cartSubtotal}
             tax={cartTax}
             total={cartTotal}
             attachedCustomer={attachedCustomer}
             onUpdateQuantity={handleUpdateQuantity}
             onRemoveItem={handleRemoveItem}
-            onAttachCustomer={() => {}}
+            onAttachCustomer={() => setShowCustomerSearch(true)}
             onRemoveCustomer={() => setAttachedCustomer(null)}
             onClearCart={handleClearCart}
             onProceedToPayment={() => setPaymentModalOpen(true)}
-            isProcessing={false}
+            onHold={handleHoldSale}
+            isProcessing={processing}
           />
         </div>
 
+        {/* Payment Modal */}
         <PaymentModal
           open={isPaymentModalOpen}
           onClose={() => setPaymentModalOpen(false)}
           total={cartTotal}
           onComplete={handlePaymentComplete}
-          isProcessing={false}
+          isProcessing={processing}
+        />
+
+        {/* Customer Search Modal */}
+        <CustomerSearchModal
+          open={showCustomerSearch}
+          onClose={() => setShowCustomerSearch(false)}
+          onSelectCustomer={handleAttachCustomer}
+        />
+
+        {/* Held Sales Modal */}
+        <HeldSalesModal
+          open={showHeldSales}
+          onClose={() => setShowHeldSales(false)}
+          onResumeSale={handleResumeSale}
         />
       </main>
     </div>

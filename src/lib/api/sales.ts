@@ -31,10 +31,14 @@ export const salesApi = {
     if (params?.page) searchParams.append("page", String(params.page));
     if (params?.limit) searchParams.append("limit", String(params.limit));
     
-    const response = await apiClient.get<PaginatedResponse<Sale>>(
+    const response = await apiClient.get<{ data: Sale[]; meta: { total: number } }>(
       `/sales?${searchParams.toString()}`
     );
-    return response.data;
+    const data = response.data.data || [];
+    const total = response.data.meta.total || 0;
+    const page = params?.page || 1;
+    const limit = params?.limit || 10;
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   },
 
   addItem: async (saleId: string, item: CreateSaleItem): Promise<Sale> => {

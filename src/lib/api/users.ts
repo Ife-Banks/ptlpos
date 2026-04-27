@@ -14,10 +14,14 @@ export const usersApi = {
     if (params?.page) searchParams.append("page", String(params.page));
     if (params?.limit) searchParams.append("limit", String(params.limit));
     
-    const response = await apiClient.get<PaginatedResponse<User>>(
+    const response = await apiClient.get<User[]>(
       `/users?${searchParams.toString()}`
     );
-    return response.data;
+    const data = response.data || [];
+    const total = data.length;
+    const page = params?.page || 1;
+    const limit = params?.limit || 10;
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   },
 
   get: async (id: string): Promise<User> => {
@@ -42,5 +46,13 @@ export const usersApi = {
 
   delete: async (id: string): Promise<void> => {
     await apiClient.delete(`/users/${id}`);
+  },
+
+  requestEmailVerification: async (userId: string): Promise<void> => {
+    await apiClient.post("/auth/email/verify-request", { userId });
+  },
+
+  verifyEmail: async (token: string): Promise<void> => {
+    await apiClient.post("/auth/email/verify", { token });
   },
 };

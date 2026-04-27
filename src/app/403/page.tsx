@@ -15,7 +15,7 @@ export default function ForbiddenPage() {
       "min-h-screen flex items-center justify-center p-4",
       isDark ? "bg-gray-950" : "bg-gray-50"
     )}>
-      <div className="text-center max-w-md">
+      <div className="text-center max-w-full">
         <div className={cn(
           "mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full",
           isDark ? "bg-red-900/20" : "bg-red-100"

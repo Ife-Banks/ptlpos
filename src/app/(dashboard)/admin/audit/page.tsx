@@ -61,11 +61,11 @@ export default function AdminAuditPage() {
         page: currentPage,
         limit: ITEMS_PER_PAGE,
       });
-      setLogs(response.data);
-      setTotal(response.total);
-    } catch (err) {
-      setError("Failed to load audit logs");
-      console.error(err);
+      setLogs(response.data || []);
+      setTotal(response.total || 0);
+    } catch (err: any) {
+      console.error("Audit API error:", err);
+      setError(err?.response?.data?.message || err?.message || "Failed to load audit logs. The /api/audit endpoint may not be available.");
     } finally {
       setLoading(false);
     }

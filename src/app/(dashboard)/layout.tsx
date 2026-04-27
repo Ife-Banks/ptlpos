@@ -34,12 +34,17 @@ export default function DashboardLayout({
     const isAdminRoute = pathname.startsWith("/admin");
     const isManagerRoute = pathname.startsWith("/manager");
     const isSalesRoute = pathname.startsWith("/pos") || pathname.startsWith("/sales");
+    const isSuperAdminRoute = pathname.startsWith("/super-admin");
 
-    if (isAdminRoute && user?.role !== "ADMIN") {
+    const userRole = user?.role || "";
+    
+    if (isAdminRoute && !["ADMIN", "BILLING_ADMIN"].includes(userRole)) {
       router.push("/403");
-    } else if (isManagerRoute && !["ADMIN", "MANAGER"].includes(user?.role || "")) {
+    } else if (isSuperAdminRoute && userRole !== "SUPER_ADMIN") {
       router.push("/403");
-    } else if (isSalesRoute && !["ADMIN", "MANAGER", "SALES_REP"].includes(user?.role || "")) {
+    } else if (isManagerRoute && !["ADMIN", "MANAGER", "SUPPORT_ADMIN"].includes(userRole)) {
+      router.push("/403");
+    } else if (isSalesRoute && !["ADMIN", "MANAGER", "SALES_REP", "SUPPORT_ADMIN"].includes(userRole)) {
       router.push("/403");
     }
   }, [isAuthenticated, user, pathname, router, initialized]);

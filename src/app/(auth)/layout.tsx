@@ -27,10 +27,12 @@ export default function AuthLayout({
   useEffect(() => {
     if (initialized && isAuthenticated && user) {
       const role = user.role;
-      if (role === "ADMIN") {
+      if (role === "ADMIN" || role === "BILLING_ADMIN") {
         router.replace("/admin/dashboard");
-      } else if (role === "MANAGER") {
+      } else if (role === "MANAGER" || role === "SUPPORT_ADMIN") {
         router.replace("/manager/dashboard");
+      } else if (role === "SUPER_ADMIN") {
+        router.replace("/super-admin/dashboard");
       } else {
         router.replace("/pos-terminal");
       }

@@ -23,6 +23,7 @@ export function ProductSearch({
   const isDark = theme === "dark";
   
   const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Product[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -40,10 +41,22 @@ export function ProductSearch({
       clearTimeout(debounceRef.current);
     }
     
-    setIsSearching(true);
-    debounceRef.current = setTimeout(() => {
+    if (value.length >= 2) {
+      setIsSearching(true);
+      debounceRef.current = setTimeout(async () => {
+        try {
+          const res = await productsApi.list({ search: value, limit: 10 });
+          setResults(Array.isArray(res.data) ? res.data : []);
+        } catch {
+          setResults([]);
+        } finally {
+          setIsSearching(false);
+        }
+      }, 300);
+    } else {
+      setResults([]);
       setIsSearching(false);
-    }, 300);
+    }
   }, []);
 
   const handleSelectProduct = useCallback((product: any) => {
@@ -116,15 +129,43 @@ export function ProductSearch({
           "absolute z-50 mt-1 w-full max-h-80 overflow-auto rounded-lg border shadow-xl",
           isDark ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"
         )}>
-          {/* Mock Results since API isn't connected */}
-          {query.length >= 2 && (
+          {results.length > 0 ? (
             <div className="p-1">
-              <div className={cn(
-                "text-xs px-3 py-2",
-                isDark ? "text-gray-500" : "text-gray-500"
-              )}>
-                Type to search products
-              </div>
+              {results.map((product) => (
+                <button
+                  key={product.id}
+                  onClick={() => handleSelectProduct(product)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-left",
+                    isDark ? "text-white" : "text-gray-900"
+                  )}
+                >
+                  <div>
+                    <div className="font-medium">{product.name}</div>
+                    <div className={cn("text-xs", isDark ? "text-gray-500" : "text-gray-500")}>
+                      {product.sku}
+                    </div>
+                  </div>
+                  <div className="font-semibold text-[#003D9B] dark:text-[#0066FF]">
+                    ${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : isSearching ? (
+            <div className={cn(
+              "flex items-center justify-center py-6",
+              isDark ? "text-gray-500" : "text-gray-400"
+            )}>
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              <span>Searching...</span>
+            </div>
+          ) : (
+            <div className={cn(
+              "text-xs px-3 py-2",
+              isDark ? "text-gray-500" : "text-gray-500"
+            )}>
+              No products found
             </div>
           )}
           

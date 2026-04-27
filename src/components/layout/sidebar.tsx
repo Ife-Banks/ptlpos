@@ -23,17 +23,25 @@ import {
   LogOut,
   Receipt,
   Building2,
+  Tags,
+  Truck,
+  ArrowLeftRight,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const adminNavItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/sales", label: "Sales", icon: Receipt },
-  { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/products", label: "Products", icon: Package },
+  { href: "/admin/categories", label: "Categories", icon: Tags },
+  { href: "/admin/branches", label: "Branches", icon: Building2 },
+  { href: "/admin/suppliers", label: "Suppliers", icon: Truck },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/import-export", label: "Import/Export", icon: FileText },
   { href: "/admin/tax-invoicing", label: "Tax & Invoicing", icon: DollarSign },
   { href: "/admin/production", label: "Production", icon: Factory },
+  { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/settings", label: "Settings", icon: Settings },
   { href: "/admin/audit", label: "Audit Logs", icon: Receipt },
 ];
@@ -51,8 +59,11 @@ const managerNavItems = [
   { href: "/manager/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/manager/sales", label: "Sales", icon: Receipt },
   { href: "/manager/inventory", label: "Inventory", icon: Warehouse },
+  { href: "/manager/inventory/transfers", label: "Transfers", icon: ArrowLeftRight },
+  { href: "/manager/inventory/stocktake", label: "Stocktake", icon: RotateCcw },
   { href: "/manager/orders", label: "Orders", icon: ClipboardList },
   { href: "/manager/purchases", label: "Purchases", icon: PackagePlus },
+  { href: "/manager/suppliers", label: "Suppliers", icon: Truck },
   { href: "/manager/customers", label: "Customers", icon: Users },
 ];
 
@@ -73,12 +84,14 @@ export function Sidebar() {
   
   switch (role) {
     case "ADMIN":
+    case "BILLING_ADMIN":
       navItems = adminNavItems;
       break;
     case "SUPER_ADMIN":
       navItems = superAdminNavItems;
       break;
     case "MANAGER":
+    case "SUPPORT_ADMIN":
       navItems = managerNavItems;
       break;
     case "SALES_REP":

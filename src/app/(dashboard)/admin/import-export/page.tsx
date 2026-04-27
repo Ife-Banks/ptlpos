@@ -10,19 +10,24 @@ import {
   FileText,
   Package,
   Users,
-  ShoppingCart,
-  DollarSign,
   CloudUpload,
   Loader2,
+  History,
 } from "lucide-react";
 import { exportsApi, importsApi } from "@/lib/api/analytics";
 
 const dataTypes = [
   { value: "products", label: "Products", description: "Product catalog", icon: Package },
   { value: "customers", label: "Customers", description: "Customer data", icon: Users },
-  { value: "orders", label: "Orders", description: "Order history", icon: ShoppingCart },
-  { value: "inventory", label: "Inventory", description: "Stock levels", icon: FileText },
-  { value: "prices", label: "Prices", description: "Price lists", icon: DollarSign },
+  { value: "suppliers", label: "Suppliers", description: "Supplier data", icon: FileText },
+  { value: "inventory", label: "Inventory", description: "Stock levels", icon: FileSpreadsheet },
+];
+
+const exportDataTypes = [
+  { value: "products", label: "Products", description: "Export products data", icon: Package },
+  { value: "customers", label: "Customers", description: "Export customers data", icon: Users },
+  { value: "suppliers", label: "Suppliers", description: "Export suppliers data", icon: FileText },
+  { value: "inventory", label: "Inventory", description: "Export inventory data", icon: FileSpreadsheet },
 ];
 
 export default function AdminImportExportPage() {
@@ -84,6 +89,8 @@ export default function AdminImportExportPage() {
         blob = await exportsApi.products();
       } else if (selectedExportType === "customers") {
         blob = await exportsApi.customers();
+      } else if (selectedExportType === "suppliers") {
+        blob = await exportsApi.suppliers();
       } else if (selectedExportType === "inventory") {
         blob = await exportsApi.inventory();
       }
@@ -117,7 +124,6 @@ export default function AdminImportExportPage() {
         {[
           { id: "import", label: "Import", icon: CloudUpload },
           { id: "export", label: "Export", icon: Download },
-          { id: "history", label: "History", icon: Clock },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -244,7 +250,6 @@ export default function AdminImportExportPage() {
         </div>
       )}
 
-      {/* Export Tab */}
       {activeTab === "export" && (
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
           <div className="p-6 border-b border-gray-200 dark:border-gray-800">
@@ -252,11 +257,10 @@ export default function AdminImportExportPage() {
             <p className="text-sm text-gray-500 dark:text-gray-400">Select data type and export to CSV or Excel.</p>
           </div>
           <div className="p-6 space-y-6">
-            {/* Data Type Selection */}
             <div>
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Select data type to export</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                {dataTypes.map((type) => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {exportDataTypes.map((type) => (
                   <button
                     key={type.value}
                     onClick={() => setSelectedExportType(type.value)}
@@ -273,7 +277,6 @@ export default function AdminImportExportPage() {
               </div>
             </div>
 
-            {/* Export Format */}
             <div className="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl text-center">
               <FileSpreadsheet className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-900 dark:text-white font-medium mb-1">
@@ -288,87 +291,6 @@ export default function AdminImportExportPage() {
                 {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                 {exporting ? "Exporting..." : "Export Data"}
               </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* History Tab */}
-      {activeTab === "history" && (
-        <div className="grid gap-6">
-          {/* Import History */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Import History</h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50 dark:bg-gray-800/50">
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">File</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Type</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Records</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Status</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {importHistory.map((item) => (
-                    <tr key={item.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <FileSpreadsheet className="h-4 w-4 text-emerald-500" />
-                          <span className="font-medium text-gray-900 dark:text-white">{item.file}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{item.type}</td>
-                      <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{item.records.toLocaleString()}</td>
-                      <td className="py-3 px-4">
-                        {item.status === "completed" ? (
-                          <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Completed</Badge>
-                        ) : (
-                          <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Failed</Badge>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-gray-500 dark:text-gray-400">{item.date}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Export History */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Export History</h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50 dark:bg-gray-800/50">
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">File</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Type</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Records</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {exportHistory.map((item) => (
-                    <tr key={item.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <FileSpreadsheet className="h-4 w-4 text-blue-500" />
-                          <span className="font-medium text-gray-900 dark:text-white">{item.file}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{item.type}</td>
-                      <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{item.records.toLocaleString()}</td>
-                      <td className="py-3 px-4 text-gray-500 dark:text-gray-400">{item.date}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
           </div>
         </div>

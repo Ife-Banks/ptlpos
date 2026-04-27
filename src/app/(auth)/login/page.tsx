@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Loader2, ShoppingCart, ArrowRight, Zap, Shield, Mail, Lock, Check, Building2, Globe, Clock, HeadphonesIcon, UserCog, Users, ShoppingBasket, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Loader2, ShoppingCart, ArrowRight, Zap, Shield, Mail, Lock, Check, Building2, Globe, Clock, HeadphonesIcon, Sparkles } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import type { User } from "@/types/api";
 import { useTheme } from "@/components/providers/theme-provider";
@@ -27,8 +27,6 @@ export default function LoginPage() {
     setMounted(true);
   }, [logout]);
 
-  const [selectedRole, setSelectedRole] = useState<"ADMIN" | "MANAGER" | "SALES_REP">("ADMIN");
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -47,10 +45,13 @@ export default function LoginPage() {
       setIsLoading(false);
       
       setTimeout(() => {
-        if (response.user.role === "ADMIN") {
+        const userRole = response.user.role;
+        if (userRole === "ADMIN" || userRole === "BILLING_ADMIN") {
           router.push("/admin/dashboard");
-        } else if (response.user.role === "MANAGER") {
+        } else if (userRole === "MANAGER" || userRole === "SUPPORT_ADMIN") {
           router.push("/manager/dashboard");
+        } else if (userRole === "SUPER_ADMIN") {
+          router.push("/super-admin/dashboard");
         } else {
           router.push("/pos-terminal");
         }
@@ -301,62 +302,6 @@ export default function LoginPage() {
                 <span className="text-sm font-medium text-[#191C1E] dark:text-[#F1F1EE]">Microsoft</span>
               </button>
             </div>
-
-{/* Role Selector */}
-              <div className="mt-4 space-y-2">
-                <label className="text-sm font-medium text-[#191C1E] dark:text-[#F1F1EE] ml-1">Demo Role</label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRole("ADMIN")}
-                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all ${
-                      selectedRole === "ADMIN"
-                        ? isDark 
-                          ? 'bg-blue-500/20 border-blue-500 text-blue-400' 
-                          : 'bg-blue-500/10 border-blue-600 text-blue-700'
-                        : isDark 
-                          ? 'bg-[#1A1A1A] border-white/20 text-[#F1F1EE] hover:bg-[#222222] hover:border-white/30' 
-                          : 'bg-white border-gray-200 hover:border-blue-300 text-gray-900 hover:bg-blue-50'
-                    }`}
-                  >
-                    <UserCog className="w-5 h-5" />
-                    <span className="text-xs font-semibold">Admin</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRole("MANAGER")}
-                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all ${
-                      selectedRole === "MANAGER"
-                        ? isDark 
-                          ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' 
-                          : 'bg-emerald-500/10 border-emerald-600 text-emerald-700'
-                        : isDark 
-                          ? 'bg-[#1A1A1A] border-white/20 text-[#F1F1EE] hover:bg-[#222222] hover:border-white/30' 
-                          : 'bg-white border-gray-200 hover:border-emerald-300 text-gray-900 hover:bg-emerald-50'
-                    }`}
-                  >
-                    <Users className="w-5 h-5" />
-                    <span className="text-xs font-semibold">Manager</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRole("SALES_REP")}
-                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all ${
-                      selectedRole === "SALES_REP"
-                        ? isDark 
-                          ? 'bg-amber-500/20 border-amber-500 text-amber-400' 
-                          : 'bg-amber-500/10 border-amber-600 text-amber-700'
-                        : isDark 
-                          ? 'bg-[#1A1A1A] border-white/20 text-[#F1F1EE] hover:bg-[#222222] hover:border-white/30' 
-                          : 'bg-white border-gray-200 hover:border-amber-300 text-gray-900 hover:bg-amber-50'
-                    }`}
-                  >
-                    <ShoppingBasket className="w-5 h-5" />
-                    <span className="text-xs font-semibold">Sales</span>
-                  </button>
-                </div>
-                <p className="text-xs text-center text-[#737685] dark:text-[#888888] mt-2">Select a demo role to explore different dashboards</p>
-              </div>
 
             {/* Advanced Toggle */}
             <button
