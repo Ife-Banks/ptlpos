@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, ShoppingCart, ArrowRight, Zap, Shield, Mail, Lock, Check, Building2, Globe, Clock, HeadphonesIcon, Sparkles } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
@@ -99,12 +100,12 @@ export default function LoginPage() {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#0066FF]/20 rounded-full blur-[120px]" />
         </div>
 
-        <div className="relative z-10 flex flex-col justify-center h-full px-12 text-white">
+        <div className="relative z-10 flex flex-col justify-center h-full px-12 text-white border border-white/20">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-              <ShoppingCart className="w-6 h-6" />
+            <div className="w-40 h-40 rounded-xl overflow-hidden">
+              <Image src="/logo-Dark.png" alt="PTLPOS" width={48} height={48} className="w-full h-full object-cover" />
             </div>
-            <span className="text-2xl font-bold">PTLPOS</span>
+            {/* <span className="text-2xl font-bold">PTLPOS</span> */}
           </div>
           
           <h1 className="text-4xl font-bold mb-4 leading-tight">
@@ -150,11 +151,8 @@ export default function LoginPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden flex flex-col items-center mb-6">
             <div className="relative mb-3">
-              <div className={`w-16 h-16 bg-gradient-to-br from-[#003D9B] to-[#0052CC] dark:from-[#0066FF] dark:to-[#8B5CF6] rounded-2xl flex items-center justify-center shadow-xl`}>
-                <ShoppingCart className="w-8 h-8 text-white" />
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#15803d] rounded-full border-2 border-white dark:border-[#111111] flex items-center justify-center">
-                <Zap className="w-2.5 h-2.5 text-white" />
+              <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-xl">
+                <Image src="/logo-Dark.png" alt="PTLPOS" width={64} height={64} className="w-full h-full object-contain" />
               </div>
             </div>
             <h1 className="text-2xl font-bold text-[#003D9B] dark:text-[#0066FF]">PTLPOS</h1>
