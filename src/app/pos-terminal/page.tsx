@@ -13,6 +13,7 @@ import { CustomerSearchModal } from "@/components/pos/customer-search-modal";
 import { HeldSalesModal } from "@/components/pos/held-sales-modal";
 import { usePOSStore } from "@/stores/pos-store";
 import { useAuthStore } from "@/stores";
+import { useSettingsStore } from "@/stores/settings-store";
 import { useTheme } from "@/components/providers/theme-provider";
 import { cn, formatCurrency } from "@/lib/utils";
 import { productsApi } from "@/lib/api/products";
@@ -61,6 +62,7 @@ export default function POSTerminalPage() {
   const { user } = useAuthStore();
   const { theme } = useTheme();
   const { isPaymentModalOpen, setPaymentModalOpen } = usePOSStore();
+  const { taxRate, loadSettings } = useSettingsStore();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [attachedCustomer, setAttachedCustomer] = useState<{ id: string; name: string; phone?: string } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -78,6 +80,7 @@ export default function POSTerminalPage() {
 
   // Fetch products and categories
   useEffect(() => {
+    loadSettings();
     const fetchData = async () => {
       setLoadingProducts(true);
       try {
@@ -109,7 +112,8 @@ export default function POSTerminalPage() {
 
   // Calculate cart totals
   const cartSubtotal = cartItems.reduce((sum, item) => sum + (item.total || 0), 0);
-  const cartTax = cartItems.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
+  const taxRateDecimal = (taxRate || 7.5) / 100;
+  const cartTax = cartSubtotal * taxRateDecimal;
   const cartTotal = cartSubtotal + cartTax;
 
   // Select product and add to cart
@@ -121,7 +125,7 @@ export default function POSTerminalPage() {
       if (existing) {
         const newQty = existing.quantity + 1;
         const newTotal = newQty * price;
-        const newTax = newTotal * 0.075;
+        const newTax = newTotal * taxRateDecimal;
         const updated = prev.map((item) =>
           item.productId === product.id
             ? { 
@@ -135,7 +139,7 @@ export default function POSTerminalPage() {
         return updated;
       }
       const itemTotal = price;
-      const itemTax = itemTotal * 0.075;
+      const itemTax = itemTotal * taxRateDecimal;
       return [
         ...prev,
         {
@@ -148,7 +152,7 @@ export default function POSTerminalPage() {
           saleId: currentSaleId || "",
           unitPrice: price,
           discount: 0,
-          taxRate: 7.5,
+          taxRate: taxRate || 7.5,
           taxAmount: itemTax,
         },
       ];
@@ -167,12 +171,12 @@ export default function POSTerminalPage() {
               ...item, 
               quantity, 
               total: quantity * item.price,
-              taxAmount: (quantity * item.price) * 0.075,
+              taxAmount: (quantity * item.price) * taxRateDecimal,
             }
           : item
       );
     });
-  }, []);
+  }, [taxRateDecimal]);
 
   // Remove item
   const handleRemoveItem = useCallback((itemId: string) => {
@@ -219,6 +223,7 @@ export default function POSTerminalPage() {
 
   // Resume held sale
   const handleResumeSale = useCallback((sale: any) => {
+    const taxRateDecimal = (taxRate || 7.5) / 100;
     const items: CartItem[] = sale.items.map((item: any) => ({
       id: `temp-${Date.now()}-${item.productId}`,
       productId: item.productId,
@@ -234,8 +239,8 @@ export default function POSTerminalPage() {
       saleId: sale.id,
       unitPrice: item.price,
       discount: item.discount || 0,
-      taxRate: item.taxRate || 7.5,
-      taxAmount: (item.price * item.quantity) * ((item.taxRate || 7.5) / 100),
+      taxRate: item.taxRate || taxRate || 7.5,
+      taxAmount: (item.price * item.quantity) * taxRateDecimal,
     }));
     
     setCartItems(items);
@@ -435,7 +440,10 @@ export default function POSTerminalPage() {
         {/* Payment Modal */}
         <PaymentModal
           open={isPaymentModalOpen}
-          onClose={() => setPaymentModalOpen(false)}
+          onClose={() => {
+            setPaymentModalOpen(false);
+            handleClearCart();
+          }}
           total={cartTotal}
           onComplete={handlePaymentComplete}
           isProcessing={processing}

@@ -2,9 +2,11 @@
 
 import { Minus, Plus, Trash2, ShoppingCart, User, X, DollarSign, CreditCard, Wallet, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useTheme } from "@/components/providers/theme-provider";
+import { useSettingsStore } from "@/stores/settings-store";
 
 interface SaleItem {
   id: string;
@@ -51,8 +53,10 @@ export function CartPanel({
   isProcessing = false,
 }: CartPanelProps) {
   const { theme } = useTheme();
+  const { taxRate } = useSettingsStore();
   const isDark = theme === "dark";
   const cartItemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const displayTaxRate = taxRate || 7.5;
 
   return (
     <div className={cn(
@@ -187,12 +191,21 @@ export function CartPanel({
                       <Trash2 className="h-3 w-3 text-red-500" />
                     )}
                   </Button>
-                  <span className={cn(
-                    "w-8 text-center text-sm font-semibold",
-                    isDark ? "text-white" : "text-gray-900"
-                  )}>
-                    {item.quantity}
-                  </span>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 1;
+                      onUpdateQuantity(item.id, val);
+                    }}
+                    className={cn(
+                      "w-10 h-7 text-center text-sm font-semibold px-1",
+                      isDark 
+                        ? "bg-gray-800 border-gray-700 text-white" 
+                        : "bg-white border-gray-200 text-gray-900"
+                    )}
+                  />
                   <Button
                     variant={isDark ? "outline" : "outline"}
                     size="icon-sm"
@@ -240,7 +253,7 @@ export function CartPanel({
         
         {/* Tax */}
         <div className="flex justify-between text-sm">
-          <span className={isDark ? "text-gray-400" : "text-gray-500"}>Tax (7.5%)</span>
+          <span className={isDark ? "text-gray-400" : "text-gray-500"}>Tax ({displayTaxRate}%)</span>
           <span className={isDark ? "text-gray-300" : "text-gray-700"}>{formatCurrency(tax)}</span>
         </div>
 

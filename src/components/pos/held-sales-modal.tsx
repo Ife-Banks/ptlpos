@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Pause, Play, ShoppingCart, Loader2, RotateCcw } from "lucide-react";
+import { Pause, Play, Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   Dialog, 
@@ -108,110 +108,120 @@ export function HeldSalesModal({ open, onClose, onResumeSale }: HeldSalesModalPr
             </div>
           ) : (
             <div className="space-y-3">
-              {heldSales.map((sale) => (
-                <div
-                  key={sale.id}
-                  className={cn(
-                    "p-4 rounded-lg border",
-                    isDark 
-                      ? "bg-gray-800 border-gray-700" 
-                      : "bg-gray-50 border-gray-200"
-                  )}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      {sale.customer ? (
+              {heldSales.map((sale) => {
+                const calculatedTotal = sale.items?.reduce((sum, item) => {
+                  const itemPrice = item.unitPrice ?? item.product?.price ?? 0;
+                  return sum + (itemPrice * item.quantity);
+                }, 0) ?? 0;
+                const saleTotal = sale.total ?? sale.subtotal ?? calculatedTotal;
+                const saleDate = sale.createdAt ? new Date(sale.createdAt).toLocaleString() : "Unknown date";
+                return (
+                  <div
+                    key={sale.id}
+                    className={cn(
+                      "p-4 rounded-lg border",
+                      isDark 
+                        ? "bg-gray-800 border-gray-700" 
+                        : "bg-gray-50 border-gray-200"
+                    )}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        {sale.customer ? (
+                          <p className={cn(
+                            "font-medium",
+                            isDark ? "text-white" : "text-gray-900"
+                          )}>
+                            {sale.customer.name}
+                          </p>
+                        ) : (
+                          <p className={cn(
+                            "font-medium italic",
+                            isDark ? "text-gray-500" : "text-gray-400"
+                          )}>
+                            Walk-in Customer
+                          </p>
+                        )}
                         <p className={cn(
-                          "font-medium",
+                          "text-xs mt-1",
+                          isDark ? "text-gray-500" : "text-gray-500"
+                        )}>
+                          {saleDate}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className={cn(
+                          "text-lg font-bold",
                           isDark ? "text-white" : "text-gray-900"
                         )}>
-                          {sale.customer.name}
+                          {formatCurrency(saleTotal)}
                         </p>
-                      ) : (
                         <p className={cn(
-                          "font-medium italic",
-                          isDark ? "text-gray-500" : "text-gray-400"
+                          "text-xs",
+                          isDark ? "text-gray-500" : "text-gray-500"
                         )}>
-                          Walk-in Customer
+                          {sale.items?.length || 0} items
                         </p>
-                      )}
-                      <p className={cn(
-                        "text-xs mt-1",
-                        isDark ? "text-gray-500" : "text-gray-500"
-                      )}>
-                        {new Date(sale.createdAt).toLocaleString()}
-                      </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className={cn(
-                        "text-lg font-bold",
-                        isDark ? "text-white" : "text-gray-900"
-                      )}>
-                        {formatCurrency(sale.total)}
-                      </p>
-                      <p className={cn(
-                        "text-xs",
-                        isDark ? "text-gray-500" : "text-gray-500"
-                      )}>
-                        {sale.items?.length || 0} items
-                      </p>
-                    </div>
-                  </div>
 
-                  {/* Items Preview */}
-                  <div className={cn(
-                    "mb-3 p-2 rounded-md",
-                    isDark ? "bg-gray-900/50" : "bg-white"
-                  )}>
-                    <div className="text-xs space-y-1">
-                      {sale.items?.slice(0, 3).map((item, idx) => (
-                        <div key={idx} className="flex justify-between">
-                          <span className={isDark ? "text-gray-400" : "text-gray-600"}>
-                            {item.quantity}x {item.product?.name || "Product"}
-                          </span>
-                          <span className={isDark ? "text-gray-400" : "text-gray-600"}>
-                            {formatCurrency(item.total)}
-                          </span>
-                        </div>
-                      ))}
-                      {(sale.items?.length || 0) > 3 && (
-                        <p className={cn(
-                          "text-center text-xs pt-1",
-                          isDark ? "text-gray-600" : "text-gray-400"
-                        )}>
-                          +{(sale.items?.length || 0) - 3} more items
-                        </p>
-                      )}
+                    <div className={cn(
+                      "mb-3 p-2 rounded-md",
+                      isDark ? "bg-gray-900/50" : "bg-white"
+                    )}>
+                      <div className="text-xs space-y-1">
+                        {sale.items?.slice(0, 3).map((item, idx) => {
+                          const itemUnitPrice = item.unitPrice ?? item.product?.price ?? 0;
+                          const itemTotal = item.total ?? (itemUnitPrice * item.quantity);
+                          return (
+                            <div key={idx} className="flex justify-between">
+                              <span className={isDark ? "text-gray-400" : "text-gray-600"}>
+                                {item.quantity}x {item.product?.name || "Product"}
+                              </span>
+                              <span className={isDark ? "text-gray-400" : "text-gray-600"}>
+                                {formatCurrency(itemUnitPrice)} x {item.quantity} = {formatCurrency(itemTotal)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                        {(sale.items?.length || 0) > 3 && (
+                          <p className={cn(
+                            "text-center text-xs pt-1",
+                            isDark ? "text-gray-600" : "text-gray-400"
+                          )}>
+                            +{(sale.items?.length || 0) - 3} more items
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleResumeSale(sale)}
+                        disabled={resuming === sale.id}
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                      >
+                        {resuming === sale.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <Play className="h-4 w-4 mr-2" />
+                        )}
+                        Resume
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleCancelSale(sale.id)}
+                        className={cn(
+                          "text-red-600 border-red-200 hover:bg-red-50",
+                          isDark ? "border-red-800 hover:bg-red-900/20" : ""
+                        )}
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleResumeSale(sale)}
-                      disabled={resuming === sale.id}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-                    >
-                      {resuming === sale.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : (
-                        <Play className="h-4 w-4 mr-2" />
-                      )}
-                      Resume
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleCancelSale(sale.id)}
-                      className={cn(
-                        "text-red-600 border-red-200 hover:bg-red-50",
-                        isDark ? "border-red-800 hover:bg-red-900/20" : ""
-                      )}
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

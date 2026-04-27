@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DollarSign, CreditCard, Wallet, Split, X, Loader2, Check, ArrowLeft } from "lucide-react";
+import { DollarSign, CreditCard, Wallet, Split, X, Loader2, Check, Banknote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,6 +44,7 @@ export function PaymentModal({
 
   const tenderedAmount = parseFloat(cashTendered) || 0;
   const change = tenderedAmount - total;
+  const isExactChange = Math.abs(change) < 0.01;
 
   const splitTotal = splitPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
   const splitRemaining = total - splitTotal;
@@ -82,23 +83,52 @@ export function PaymentModal({
     return true;
   };
 
-  const quickAmounts = [total, 50, 100, 200, 500];
+  const quickAmounts = [
+    { label: "Exact", value: Math.ceil(total) },
+    { label: "50", value: 50 },
+    { label: "100", value: 100 },
+    { label: "200", value: 200 },
+    { label: "500", value: 500 },
+  ];
 
   if (isComplete) {
     return (
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-sm text-center">
-          <div className="flex flex-col items-center py-6">
-            <div className="w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4">
-              <Check className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
+        <DialogContent className={cn("max-w-4xl text-center", isDark ? "bg-gray-900" : "bg-white")}>
+          <div className="flex flex-col items-center py-8">
+            <div className={cn(
+              "w-24 h-24 rounded-full flex items-center justify-center mb-6",
+              isDark ? "bg-emerald-500/20" : "bg-emerald-100"
+            )}>
+              <Check className={cn("h-12 w-12", isDark ? "text-emerald-400" : "text-emerald-600")} />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Payment Successful!</h2>
+            <h2 className={cn("text-2xl font-bold mb-2", isDark ? "text-white" : "text-gray-900")}>
+              Payment Successful!
+            </h2>
+            <p className={cn("text-lg mb-6", isDark ? "text-gray-400" : "text-gray-500")}>
+              Sale completed successfully
+            </p>
             {change > 0 && (
-              <p className="text-gray-500 dark:text-gray-400 mb-6">
-                Change due: <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(change)}</span>
-              </p>
+              <div className={cn(
+                "px-6 py-3 rounded-lg mb-6",
+                isDark ? "bg-emerald-500/20" : "bg-emerald-50"
+              )}>
+                <p className={cn("text-sm", isDark ? "text-emerald-400" : "text-emerald-600")}>
+                  Change Due
+                </p>
+                <p className={cn("text-3xl font-bold", isDark ? "text-emerald-400" : "text-emerald-700")}>
+                  {formatCurrency(change)}
+                </p>
+              </div>
             )}
-            <Button onClick={onClose} className="w-full bg-[#003D9B] hover:bg-[#003D9B]/90 dark:bg-[#0066FF] dark:hover:bg-[#0066FF]/90 text-white">
+            <Button 
+              onClick={onClose} 
+              className={cn(
+                "w-full h-12 text-base font-semibold",
+                "bg-emerald-600 hover:bg-emerald-700 text-white"
+              )}
+            >
+              <Banknote className="h-5 w-5 mr-2" />
               Done - New Sale
             </Button>
           </div>
@@ -109,144 +139,273 @@ export function PaymentModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className={cn("max-w-md", isDark ? "bg-gray-900" : "bg-white")}>
-        <DialogHeader>
-          <DialogTitle className={isDark ? "text-white" : "text-gray-900"}>Complete Payment</DialogTitle>
+      <DialogContent className={cn(
+        "max-w-4xl ",
+        isDark ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200"
+      )}>
+        <DialogHeader className={cn("pb-4 border-b", isDark ? "border-gray-800" : "border-gray-100")}>
+          <DialogTitle className={cn("text-xl font-bold flex items-center gap-2", isDark ? "text-white" : "text-gray-900")}>
+            <DollarSign className={cn("h-6 w-6", isDark ? "text-emerald-400" : "text-emerald-600")} />
+            Complete Payment
+          </DialogTitle>
         </DialogHeader>
 
-        {/* Total Display */}
+        {/* Total Display - Prominent */}
         <div className={cn(
-          "text-center py-4 rounded-xl",
-          isDark ? "bg-gray-800" : "bg-gray-100"
+          "py-6 rounded-xl text-center",
+          isDark ? "bg-gradient-to-r from-gray-800 to-gray-850" : "bg-gradient-to-r from-gray-50 to-gray-100"
         )}>
-          <p className={cn("text-sm", isDark ? "text-gray-400" : "text-gray-500")}>Total Amount</p>
-          <p className="text-4xl font-bold text-[#003D9B] dark:text-[#0066FF]">{formatCurrency(total)}</p>
+          <p className={cn("text-sm font-medium mb-1", isDark ? "text-gray-400" : "text-gray-500")}>
+            Amount Due
+          </p>
+          <p className={cn(
+            "text-5xl font-bold tracking-tight",
+            isDark ? "text-white" : "text-gray-900"
+          )}>
+            {formatCurrency(total)}
+          </p>
         </div>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as PaymentTab)}>
-          <TabsList className={cn("grid w-full", isDark ? "bg-gray-800" : "bg-gray-100")}>
+          <TabsList className={cn(
+            "grid w-full h-auto p-1 rounded-lg",
+            isDark ? "bg-gray-800/50" : "bg-gray-100"
+          )}>
             <TabsTrigger 
               value="cash" 
               className={cn(
-                "flex items-center gap-1",
-                isDark ? "data-[state=active]:bg-gray-700" : ""
+                "flex items-center justify-center gap-2 py-2.5 rounded-md transition-all",
+                isDark 
+                  ? "data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-gray-400" 
+                  : "data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm text-gray-600"
               )}
             >
               <DollarSign className="h-4 w-4" />
               <span className="hidden sm:inline">Cash</span>
             </TabsTrigger>
-            <TabsTrigger value="card">
+            <TabsTrigger 
+              value="card"
+              className={cn(
+                "flex items-center justify-center gap-2 py-2.5 rounded-md transition-all",
+                isDark 
+                  ? "data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-gray-400" 
+                  : "data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm text-gray-600"
+              )}
+            >
               <CreditCard className="h-4 w-4" />
               <span className="hidden sm:inline">Card</span>
             </TabsTrigger>
-            <TabsTrigger value="other">
+            <TabsTrigger 
+              value="other"
+              className={cn(
+                "flex items-center justify-center gap-2 py-2.5 rounded-md transition-all",
+                isDark 
+                  ? "data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-gray-400" 
+                  : "data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm text-gray-600"
+              )}
+            >
               <Wallet className="h-4 w-4" />
               <span className="hidden sm:inline">Other</span>
             </TabsTrigger>
-            <TabsTrigger value="split">
+            <TabsTrigger 
+              value="split"
+              className={cn(
+                "flex items-center justify-center gap-2 py-2.5 rounded-md transition-all",
+                isDark 
+                  ? "data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-gray-400" 
+                  : "data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm text-gray-600"
+              )}
+            >
               <Split className="h-4 w-4" />
             </TabsTrigger>
           </TabsList>
 
           {/* Cash Payment */}
-          <TabsContent value="cash" className="space-y-4">
-            <div className="space-y-2">
-              <Label className={isDark ? "text-gray-300" : "text-gray-700"}>Amount Tendered</Label>
-              <Input
-                type="number"
-                value={cashTendered}
-                onChange={(e) => setCashTendered(e.target.value)}
-                placeholder="0.00"
-                className={cn(
-                  "text-lg h-12",
-                  isDark ? "bg-gray-800 border-gray-700 text-white" : "bg-white border-gray-200"
-                )}
-                autoFocus
-              />
+          <TabsContent value="cash" className="space-y-4 pt-4">
+            <div className="space-y-3">
+              <Label className={cn("text-sm font-medium", isDark ? "text-gray-300" : "text-gray-700")}>
+                Amount Tendered
+              </Label>
+              <div className="relative">
+                <span className={cn(
+                  "absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-medium",
+                  isDark ? "text-gray-500" : "text-gray-400"
+                )}>
+                  $
+                </span>
+                <Input
+                  type="number"
+                  value={cashTendered}
+                  onChange={(e) => setCashTendered(e.target.value)}
+                  placeholder="0.00"
+                  className={cn(
+                    "text-2xl h-14 pl-10 pr-4 text-right font-semibold",
+                    isDark ? "bg-gray-800 border-gray-700 text-white placeholder:text-gray-500" : "bg-white border-gray-200 placeholder:text-gray-400"
+                  )}
+                  autoFocus
+                />
+              </div>
             </div>
             
-            <div className="grid grid-cols-5 gap-2">
-              {quickAmounts.map((amount) => (
-                <Button
-                  key={amount}
-                  variant="outline"
-                  onClick={() => setCashTendered(String(amount))}
-                  className={cn(
-                    "text-sm font-semibold",
-                    isDark ? "border-gray-700 hover:bg-gray-800" : ""
-                  )}
-                >
-                  ${amount}
-                </Button>
-              ))}
+            {/* Quick Amounts */}
+            <div className="space-y-2">
+              <p className={cn("text-xs font-medium", isDark ? "text-gray-500" : "text-gray-500")}>
+                Quick Amounts
+              </p>
+              <div className="grid grid-cols-5 gap-2">
+                {quickAmounts.map((item) => (
+                  <Button
+                    key={item.value}
+                    variant="outline"
+                    onClick={() => setCashTendered(String(item.value))}
+                    className={cn(
+                      "h-11 text-sm font-semibold transition-all",
+                      cashTendered === String(item.value)
+                        ? isDark 
+                          ? "bg-emerald-600 border-emerald-600 text-white" 
+                          : "bg-emerald-600 border-emerald-600 text-white"
+                        : isDark 
+                          ? "border-gray-700 hover:bg-gray-700 text-gray-300 hover:text-white" 
+                          : "border-gray-200 hover:bg-gray-50 text-gray-700"
+                    )}
+                  >
+                    {item.label}
+                  </Button>
+                ))}
+              </div>
             </div>
 
+            {/* Change Display */}
             <div className={cn(
-              "text-center py-3 rounded-lg font-bold",
+              "p-4 rounded-xl text-center",
               change >= 0 
-                ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400" 
-                : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                ? isExactChange
+                  ? isDark ? "bg-emerald-500/20" : "bg-emerald-50"
+                  : isDark ? "bg-blue-500/20" : "bg-blue-50"
+                : isDark ? "bg-red-500/20" : "bg-red-50"
             )}>
-              <p className="text-sm">Change Due</p>
-              <p className="text-2xl">{formatCurrency(Math.abs(change))}</p>
+              <p className={cn("text-sm font-medium mb-1",
+                change >= 0 
+                  ? isExactChange
+                    ? isDark ? "text-emerald-400" : "text-emerald-600"
+                    : isDark ? "text-blue-400" : "text-blue-600"
+                  : isDark ? "text-red-400" : "text-red-600"
+              )}>
+                {change > 0 ? "Change Due" : change < 0 ? "Amount Short" : "Exact Amount"}
+              </p>
+              <p className={cn(
+                "text-3xl font-bold",
+                change >= 0 
+                  ? isExactChange
+                    ? isDark ? "text-emerald-400" : "text-emerald-700"
+                    : isDark ? "text-blue-400" : "text-blue-700"
+                  : isDark ? "text-red-400" : "text-red-700"
+              )}>
+                {formatCurrency(Math.abs(change))}
+              </p>
             </div>
           </TabsContent>
 
           {/* Card Payment */}
-          <TabsContent value="card" className="space-y-4">
-            <div className="text-center py-8">
-              <CreditCard className={cn("h-16 w-16 mx-auto mb-4", isDark ? "text-gray-500" : "text-gray-400")} />
-              <p className={isDark ? "text-gray-400" : "text-gray-500"}>Ready for card payment</p>
-              <p className={cn("text-sm mt-2", isDark ? "text-gray-500" : "text-gray-400")}>
-                Amount: <span className="font-bold">{formatCurrency(total)}</span>
+          <TabsContent value="card" className="pt-6">
+            <div className={cn(
+              "flex flex-col items-center justify-center py-12 rounded-xl",
+              isDark ? "bg-gray-800/50" : "bg-gray-50"
+            )}>
+              <div className={cn(
+                "w-20 h-20 rounded-full flex items-center justify-center mb-4",
+                isDark ? "bg-blue-500/20" : "bg-blue-100"
+              )}>
+                <CreditCard className={cn("h-10 w-10", isDark ? "text-blue-400" : "text-blue-600")} />
+              </div>
+              <p className={cn("text-lg font-medium mb-1", isDark ? "text-white" : "text-gray-900")}>
+                Card Payment
+              </p>
+              <p className={cn("text-sm mb-4", isDark ? "text-gray-400" : "text-gray-500")}>
+                Tap, insert, or swipe card to pay
+              </p>
+              <p className={cn(
+                "text-2xl font-bold",
+                isDark ? "text-white" : "text-gray-900"
+              )}>
+                {formatCurrency(total)}
               </p>
             </div>
           </TabsContent>
 
           {/* Other Payment */}
-          <TabsContent value="other" className="space-y-4">
-            <div className="text-center py-8">
-              <Wallet className={cn("h-16 w-16 mx-auto mb-4", isDark ? "text-gray-500" : "text-gray-400")} />
-              <p className={isDark ? "text-gray-400" : "text-gray-500"}>Other payment method</p>
-              <p className={cn("text-sm mt-2", isDark ? "text-gray-500" : "text-gray-400")}>
-                Amount: <span className="font-bold">{formatCurrency(total)}</span>
+          <TabsContent value="other" className="pt-6">
+            <div className={cn(
+              "flex flex-col items-center justify-center py-12 rounded-xl",
+              isDark ? "bg-gray-800/50" : "bg-gray-50"
+            )}>
+              <div className={cn(
+                "w-20 h-20 rounded-full flex items-center justify-center mb-4",
+                isDark ? "bg-purple-500/20" : "bg-purple-100"
+              )}>
+                <Wallet className={cn("h-10 w-10", isDark ? "text-purple-400" : "text-purple-600")} />
+              </div>
+              <p className={cn("text-lg font-medium mb-1", isDark ? "text-white" : "text-gray-900")}>
+                Other Payment Methods
+              </p>
+              <p className={cn("text-sm mb-4", isDark ? "text-gray-400" : "text-gray-500")}>
+                Bank transfer, gift card, or store credit
+              </p>
+              <p className={cn(
+                "text-2xl font-bold",
+                isDark ? "text-white" : "text-gray-900"
+              )}>
+                {formatCurrency(total)}
               </p>
             </div>
           </TabsContent>
 
           {/* Split Payment */}
-          <TabsContent value="split" className="space-y-4">
-            <div className="space-y-2">
+          <TabsContent value="split" className="space-y-4 pt-4">
+            <div className="space-y-3">
               {splitPayments.map((split, index) => (
-                <div key={index} className="flex gap-2">
+                <div key={index} className="flex items-center gap-3">
                   <select
                     value={split.method}
                     onChange={(e) => updateSplitRow(index, "method", e.target.value)}
                     className={cn(
-                      "h-10 rounded-md border px-3 py-2 text-sm",
-                      isDark ? "bg-gray-800 border-gray-700 text-white" : "bg-white border-gray-200"
+                      "h-11 w-32 rounded-lg border px-3 text-sm font-medium",
+                      isDark 
+                        ? "bg-gray-800 border-gray-700 text-white" 
+                        : "bg-white border-gray-200 text-gray-700"
                     )}
                   >
                     <option value="CASH">Cash</option>
                     <option value="CARD">Card</option>
                     <option value="OTHER">Other</option>
                   </select>
-                  <Input
-                    type="number"
-                    value={split.amount}
-                    onChange={(e) => updateSplitRow(index, "amount", e.target.value)}
-                    placeholder="0.00"
-                    className={cn(
-                      "flex-1",
-                      isDark ? "bg-gray-800 border-gray-700" : ""
-                    )}
-                  />
+                  <div className="relative flex-1">
+                    <span className={cn(
+                      "absolute left-3 top-1/2 -translate-y-1/2 text-lg font-medium",
+                      isDark ? "text-gray-500" : "text-gray-400"
+                    )}>
+                      $
+                    </span>
+                    <Input
+                      type="number"
+                      value={split.amount}
+                      onChange={(e) => updateSplitRow(index, "amount", e.target.value)}
+                      placeholder="0.00"
+                      className={cn(
+                        "h-11 pl-8 pr-4 text-right font-medium",
+                        isDark ? "bg-gray-800 border-gray-700 text-white" : "bg-white border-gray-200"
+                      )}
+                    />
+                  </div>
                   {splitPayments.length > 1 && (
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => removeSplitRow(index)}
-                      className="text-red-500"
+                      className={cn(
+                        "h-11 w-11",
+                        isDark ? "text-gray-400 hover:text-red-400 hover:bg-red-500/20" : "text-gray-400 hover:text-red-600 hover:bg-red-50"
+                      )}
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -254,48 +413,72 @@ export function PaymentModal({
                 </div>
               ))}
               
-              <Button variant="outline" onClick={addSplitRow} className="w-full">
-                + Add Payment Method
+              <Button 
+                variant="outline" 
+                onClick={addSplitRow} 
+                className={cn(
+                  "w-full h-11 font-medium",
+                  isDark ? "border-gray-700 hover:bg-gray-800 text-gray-300" : "border-gray-200 hover:bg-gray-50"
+                )}
+              >
+                <Split className="h-4 w-4 mr-2" />
+                Add Another Payment
               </Button>
             </div>
 
-            <div className={cn("space-y-2 text-sm", isDark ? "text-gray-400" : "text-gray-600")}>
-              <div className="flex justify-between">
-                <span>Total Due</span>
-                <span className="font-bold">{formatCurrency(total)}</span>
+            {/* Split Summary */}
+            <div className={cn(
+              "p-4 rounded-xl space-y-3",
+              isDark ? "bg-gray-800/50" : "bg-gray-50"
+            )}>
+              <div className="flex justify-between text-sm">
+                <span className={isDark ? "text-gray-400" : "text-gray-500"}>Total Due</span>
+                <span className={cn("font-bold", isDark ? "text-white" : "text-gray-900")}>
+                  {formatCurrency(total)}
+                </span>
               </div>
-              <div className="flex justify-between">
-                <span>Amount Given</span>
+              <div className="flex justify-between text-sm">
+                <span className={isDark ? "text-gray-400" : "text-gray-500"}>Amount Tendered</span>
                 <span className={cn(
                   "font-bold",
-                  splitTotal >= total ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600"
+                  splitTotal >= total 
+                    ? isDark ? "text-emerald-400" : "text-emerald-600"
+                    : isDark ? "text-gray-400" : "text-gray-500"
                 )}>
                   {formatCurrency(splitTotal)}
                 </span>
               </div>
               {splitRemaining > 0 && (
-                <div className="flex justify-between text-amber-600">
-                  <span>Remaining</span>
-                  <span>{formatCurrency(splitRemaining)}</span>
+                <div className={cn("flex justify-between text-sm pt-2 border-t", isDark ? "border-gray-700" : "border-gray-200")}>
+                  <span className={isDark ? "text-amber-400" : "text-amber-600"}>Remaining</span>
+                  <span className={cn("font-bold", isDark ? "text-amber-400" : "text-amber-600")}>
+                    {formatCurrency(splitRemaining)}
+                  </span>
                 </div>
               )}
             </div>
           </TabsContent>
         </Tabs>
 
-        <DialogFooter>
+        <DialogFooter className={cn("pt-4 border-t", isDark ? "border-gray-800" : "border-gray-100")}>
           <Button 
             variant="outline" 
             onClick={onClose} 
             disabled={isProcessing}
-            className={isDark ? "border-gray-700" : ""}
+            className={cn(
+              "h-11 px-6",
+              isDark ? "border-gray-700 hover:bg-gray-800" : ""
+            )}
           >
             Cancel
           </Button>
           <Button 
             onClick={handleComplete} 
             disabled={!canComplete() || isProcessing}
-            className="bg-[#003D9B] hover:bg-[#003D9B]/90 dark:bg-[#0066FF] dark:hover:bg-[#0066FF]/90 text-white"
+            className={cn(
+              "h-11 px-8 font-semibold",
+              "bg-emerald-600 hover:bg-emerald-700 text-white"
+            )}
           >
             {isProcessing ? (
               <>
@@ -303,7 +486,10 @@ export function PaymentModal({
                 Processing...
               </>
             ) : (
-              `Complete - ${formatCurrency(activeTab === "cash" ? tenderedAmount : total)}`
+              <>
+                <Check className="mr-2 h-4 w-4" />
+                Complete Payment
+              </>
             )}
           </Button>
         </DialogFooter>
