@@ -159,14 +159,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <Link href="/" className="flex items-center gap-3 group">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 ${
-                isDark ? "bg-gradient-to-br from-blue-500 to-blue-600" : "bg-gradient-to-br from-[#003D9B] to-[#0066FF]"
-              }`}>
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
+              <div className="w-25 h-20 rounded-xl overflow-hidden transition-transform group-hover:scale-105">
+                <Image src="/logo-Dark.png" alt="PTLPOS" width={40} height={40} className="w-full h-full object-contain" />
               </div>
-              <span className={`text-xl font-bold ${isDark ? "text-white" : "text-[#003D9B]"}`}>PTLPOS</span>
+              {/* <span className={`text-xl font-bold ${isDark ? "text-white" : "text-[#003D9B]"}`}>PTLPOS</span> */}
             </Link>
 
             <nav className="hidden lg:flex items-center gap-8">
@@ -279,7 +275,7 @@ export default function Home() {
               initial="hidden"
               animate="visible"
               variants={staggerContainer}
-              className="max-w-4xl mx-auto text-center"
+              className="max-w-5xl mx-auto text-center"
             >
               <motion.div variants={fadeUp} className="mb-6">
                 <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-sm font-medium ${
@@ -304,15 +300,15 @@ export default function Home() {
                 } bg-clip-text text-transparent`}>
                   Smarter
                 </span>
-              </motion.h1>
-              
-              <motion.p 
+</motion.h1>
+               
+              <motion.p
                 variants={fadeUp}
-                className={`text-lg sm:text-xl mb-10 max-w-2xl mx-auto ${
+                className={`text-lg sm:text-xl mb-10 max-w-4xl mx-auto ${
                   isDark ? "text-gray-400" : "text-gray-600"
                 }`}
               >
-                The all-in-one point of sale, inventory, and analytics platform built for modern retailers. 
+                The all-in-one point of sale, inventory, and analytics platform built for modern retailers.
                 Lightning-fast checkout, real-time insights, multi-branch control.
               </motion.p>
               
@@ -342,7 +338,7 @@ export default function Home() {
         {/* Stats Section */}
         <section className={`py-16 border-y ${isDark ? "bg-gray-900/50 border-gray-800" : "bg-gray-50 border-gray-100"}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {stats.map((stat, idx) => (
                 <motion.div
                   key={idx}
@@ -382,7 +378,7 @@ export default function Home() {
                 Everything You Need to{" "}
                 <span className={isDark ? "text-blue-400" : "text-[#003D9B]"}>Scale</span>
               </motion.h2>
-              <motion.p variants={fadeUp} className={`text-lg max-w-2xl mx-auto ${
+              <motion.p variants={fadeUp} className={`text-lg max-w-4xl mx-auto ${
                 isDark ? "text-gray-400" : "text-gray-600"
               }`}>
                 From lightning-fast checkout to comprehensive analytics, PTLPOS has every tool your business needs.
@@ -475,7 +471,7 @@ export default function Home() {
                     </p>
                   </div>
                   {idx < steps.length - 1 && (
-                    <div className={`hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2 ${
+                    <div className={`hidden md:block absolute top-1/2 -right-7 transform -translate-y-1/2 ${
                       isDark ? "text-gray-700" : "text-gray-300"
                     }`}>
                       <ChevronRight className="w-8 h-8" />
@@ -582,7 +578,7 @@ export default function Home() {
               whileInView="visible"
               viewport={{ once: true }}
               variants={staggerContainer}
-              className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto"
+              className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto"
             >
               {plans.map((plan, idx) => (
                 <motion.div
@@ -664,7 +660,7 @@ export default function Home() {
             <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
           </div>
           
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
