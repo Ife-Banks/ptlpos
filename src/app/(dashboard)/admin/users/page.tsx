@@ -114,13 +114,12 @@ export default function AdminUsersPage() {
     setIsCreating(true);
     setError("");
     try {
-      const createdUser = await usersApi.create({
+      await usersApi.create({
         name: newUser.name,
         email: newUser.email,
         password: newUser.password,
-        roleId: newUser.roleId,
+        role: newUser.roleId as UserRole,
       });
-      await usersApi.requestEmailVerification(createdUser.id);
       setIsCreateModalOpen(false);
       setNewUser({ name: "", email: "", password: "", roleId: "" });
       loadUsers();
@@ -129,6 +128,17 @@ export default function AdminUsersPage() {
       console.error(err);
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
+    try {
+      await usersApi.delete(userId);
+      loadUsers();
+    } catch (err) {
+      setError("Failed to delete user");
+      console.error(err);
     }
   };
 
@@ -210,30 +220,31 @@ export default function AdminUsersPage() {
               </TableHeader>
               <TableBody>
                 {users.map((user) => {
-                  const roleBadge = getRoleBadge(user.role);
+                  const userRole = typeof user.role === 'string' ? user.role : 'SALES_REP';
+                  const roleBadge = getRoleBadge(userRole);
                   return (
                     <TableRow key={user.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-[#003D9B]/10 dark:bg-[#0066FF]/20 flex items-center justify-center text-[#003D9B] dark:text-[#0066FF] text-sm font-semibold">
-                            {user.name.split(" ").map(n => n[0]).join("")}
+                            {String(user.name).split(" ").map(n => n[0]).join("")}
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900 dark:text-white">{user.name}</p>
+                            <p className="font-medium text-gray-900 dark:text-white">{String(user.name)}</p>
                             <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
                               <Mail className="h-3 w-3" />
-                              {user.email}
+                              {String(user.email)}
                             </div>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={roleBadge.className}>{roleBadge.label}</Badge>
+                        <Badge className={roleBadge.className}>{String(roleBadge.label)}</Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
                           <Calendar className="h-4 w-4" />
-                          {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "-"}
+                          {user.createdAt ? new Date(String(user.createdAt)).toLocaleDateString() : "-"}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -246,7 +257,7 @@ export default function AdminUsersPage() {
                           <DropdownMenuContent align="end" className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
                             <DropdownMenuItem>Edit User</DropdownMenuItem>
                             <DropdownMenuItem>Change Role</DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">Delete User</DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteUser(user.id)}>Delete User</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

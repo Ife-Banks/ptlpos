@@ -10,8 +10,17 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
+  phone?: string;
   createdAt?: string;
   updatedAt?: string;
+  tenant?: {
+    id: string;
+    name: string;
+  };
+  branches?: Array<{
+    id: string;
+    name: string;
+  }>;
 }
 
 export interface AuthTokens {
@@ -64,8 +73,20 @@ export interface Tenant {
 export interface TaxConfig {
   vatInclusive: boolean;
   taxRate: number;
-  receiptTemplate: "A4" | "80mm" | "40mm";
+  taxId?: string;
+  receiptTemplate?: "A4" | "80mm" | "40mm";
   brandColor?: string;
+}
+
+export interface ReceiptSettings {
+  showBusinessName: boolean;
+  showPhone: boolean;
+  showAddress: boolean;
+  showUnitPrice: boolean;
+  customHeader?: string;
+  customFooter?: string;
+  showCustomerName: boolean;
+  showCustomerPhone: boolean;
 }
 
 // ===========================================

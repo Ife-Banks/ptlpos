@@ -33,7 +33,7 @@ export const usersApi = {
     name: string;
     email: string;
     password: string;
-    roleId: string;
+    role: string;
   }): Promise<User> => {
     const response = await apiClient.post<User>("/users", data);
     return response.data;
