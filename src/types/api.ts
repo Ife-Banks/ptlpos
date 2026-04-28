@@ -90,6 +90,40 @@ export interface ReceiptSettings {
 }
 
 // ===========================================
+// SHIFT TYPES
+// ===========================================
+
+export type ShiftStatus = "OPEN" | "CLOSED";
+export type DrawerType = "ONLINE" | "OFFLINE" | "MIXED";
+
+export interface Shift {
+  id: string;
+  userId: string;
+  userName?: string;
+  branchId: string;
+  branchName?: string;
+  status: ShiftStatus;
+  openingBalance: number;
+  closingBalance?: number;
+  expectedCash?: number;
+  actualCash?: number;
+  discrepancy?: number;
+  drawerType: DrawerType;
+  notes?: string;
+  openedAt: string;
+  closedAt?: string;
+  createdAt?: string;
+}
+
+export interface ShiftReconciliation {
+  actualCash: number;
+  actualCard: number;
+  actualTransfer: number;
+  actualMobile: number;
+  notes?: string;
+}
+
+// ===========================================
 // PRODUCT TYPES
 // ===========================================
 

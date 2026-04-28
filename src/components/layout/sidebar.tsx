@@ -27,6 +27,7 @@ import {
   Truck,
   ArrowLeftRight,
   RotateCcw,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -36,6 +37,7 @@ const adminNavItems = [
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/categories", label: "Categories", icon: Tags },
   { href: "/admin/branches", label: "Branches", icon: Building2 },
+  { href: "/admin/shifts", label: "Shifts", icon: Clock },
   { href: "/admin/suppliers", label: "Suppliers", icon: Truck },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/import-export", label: "Import/Export", icon: FileText },
