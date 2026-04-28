@@ -3,18 +3,23 @@ import "./globals.css";
 import { QueryProvider } from "@/lib/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 
-const systemFont = "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+const systemFont =
+  "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
 export const metadata: Metadata = {
   title: {
     default: "PTLPOS – Smart Retail & POS Platform",
     template: "%s | PTLPOS",
   },
-  description: "Multi-tenant Point of Sale and retail management platform for SMEs. Manage sales, inventory, customers and analytics in one place.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+  description:
+    "Multi-tenant Point of Sale and retail management platform for SMEs. Manage sales, inventory, customers and analytics in one place.",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+  ),
   openGraph: {
     title: "PTLPOS – Smart Retail & POS Platform",
-    description: "Multi-tenant Point of Sale and retail management platform for SMEs. Manage sales, inventory, customers and analytics in one place.",
+    description:
+      "Multi-tenant Point of Sale and retail management platform for SMEs. Manage sales, inventory, customers and analytics in one place.",
     url: "/",
     siteName: "PTLPOS",
     type: "website",
@@ -31,7 +36,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "PTLPOS – Smart Retail & POS Platform",
-    description: "Multi-tenant Point of Sale and retail management platform for SMEs. Manage sales, inventory, customers and analytics in one place.",
+    description:
+      "Multi-tenant Point of Sale and retail management platform for SMEs. Manage sales, inventory, customers and analytics in one place.",
     images: ["/og-image.png"],
   },
   icons: {
@@ -60,9 +66,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body style={{ fontFamily: systemFont }} className={systemFont}>
         <ThemeProvider>
-          <QueryProvider>
-            {children}
-          </QueryProvider>
+          <QueryProvider>{children}</QueryProvider>
         </ThemeProvider>
       </body>
     </html>
