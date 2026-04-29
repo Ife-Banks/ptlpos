@@ -13,6 +13,18 @@ export interface SystemMetrics {
 }
 
 export const analyticsApi = {
+  getDashboardStats: async (): Promise<{
+    customers: number;
+    products: number;
+    sales: { total: number; today: number };
+    revenue: { total: number; today: number };
+    activeShifts: number;
+    lowStockAlerts: number;
+  }> => {
+    const response = await apiClient.get("/dashboard/stats");
+    return response.data;
+  },
+
   getDashboard: async (params?: {
     from?: string;
     to?: string;

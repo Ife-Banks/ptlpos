@@ -140,35 +140,23 @@ export default function AdminDashboardPage() {
     setError(null);
 
     try {
-      const [analyticsData, products, customers, categories, branches] = await Promise.all([
-        analyticsApi.getDashboard({ from: dateRange.from, to: dateRange.to }),
-        productsApi.list({ limit: 1 }),
-        customersApi.list({ limit: 1 }),
-        categoriesApi.list({ limit: 1 }),
-        branchesApi.list({ limit: 1 }),
-      ]).catch(() => [
-        { revenue: 0, revenueChange: 0, salesCount: 0, salesCountChange: 0, customersCount: 0, inventoryValue: 0, topProducts: [] },
-        { total: 0 },
-        { total: 0 },
-        { total: 0 },
-        { total: 0 },
-      ]);
-
-      setAnalytics({
-        revenue: analyticsData?.revenue || 0,
-        revenueChange: analyticsData?.revenueChange || 0,
-        salesCount: analyticsData?.salesCount || 0,
-        salesCountChange: analyticsData?.salesCountChange || 0,
-        customersCount: analyticsData?.customersCount || 0,
-        inventoryValue: analyticsData?.inventoryValue || 0,
-        topProducts: analyticsData?.topProducts || [],
-      });
+      const stats = await analyticsApi.getDashboardStats();
 
       setCounts({
-        products: products?.total || 0,
-        customers: customers?.total || 0,
-        categories: categories?.total || 0,
-        branches: branches?.total || 0,
+        products: stats.products || 0,
+        customers: stats.customers || 0,
+        categories: 0,
+        branches: 0,
+      });
+
+      setAnalytics({
+        revenue: stats.revenue?.total || 0,
+        revenueChange: 0,
+        salesCount: stats.sales?.total || 0,
+        salesCountChange: 0,
+        customersCount: stats.customers || 0,
+        inventoryValue: 0,
+        topProducts: [],
       });
     } catch (err) {
       console.error("Failed to load dashboard data:", err);
