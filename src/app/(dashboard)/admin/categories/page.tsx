@@ -73,8 +73,9 @@ export default function AdminCategoriesPage() {
         page: currentPage,
         limit: ITEMS_PER_PAGE,
       });
-      setCategories(response.data || []);
-      setTotal(response.total || 0);
+      const arr = Array.isArray(response.data) ? response.data : (Array.isArray(response) ? response : []);
+      setCategories(arr);
+      setTotal(arr.length);
     } catch (err) {
       setError("Failed to load categories");
       console.error(err);

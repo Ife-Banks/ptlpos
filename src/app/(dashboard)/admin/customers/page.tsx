@@ -86,8 +86,9 @@ export default function AdminCustomersPage() {
         page: currentPage,
         limit: ITEMS_PER_PAGE,
       });
-      setCustomers(response.data || []);
-      setTotal(response.total || 0);
+      const arr = Array.isArray(response.data) ? response.data : (Array.isArray(response) ? response : []);
+      setCustomers(arr);
+      setTotal(arr.length);
     } catch (err) {
       setError("Failed to load customers");
       console.error(err);

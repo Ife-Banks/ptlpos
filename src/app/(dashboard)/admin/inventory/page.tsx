@@ -101,8 +101,9 @@ export default function AdminInventoryPage() {
         page: currentPage,
         limit: ITEMS_PER_PAGE,
       });
-      setInventory(response.data || []);
-      setTotal(response.total || 0);
+      const arr = Array.isArray(response.data) ? response.data : (Array.isArray(response) ? response : []);
+      setInventory(arr);
+      setTotal(arr.length);
     } catch (err) {
       setError("Failed to load inventory");
       console.error(err);
