@@ -25,14 +25,15 @@ export const categoriesApi = {
     if (params?.limit) searchParams.append("limit", String(params.limit));
     if (params?.q) searchParams.append("q", params.q);
     if (params?.isActive !== undefined) searchParams.append("isActive", String(params.isActive));
-    const response = await apiClient.get<Category[]>(`/categories?${searchParams.toString()}`);
-    const data = response.data || [];
+    const response = await apiClient.get<{ data: Category[]; pagination: { page: number; limit: number; total: number; pages: number } }>(`/categories?${searchParams.toString()}`);
+    const data = response.data?.data || [];
+    const pagination = response.data?.pagination;
     return {
       data,
-      total: data.length,
-      page: params?.page || 1,
-      limit: params?.limit || 10,
-      totalPages: Math.ceil(data.length / (params?.limit || 10)),
+      total: pagination?.total || data.length,
+      page: pagination?.page || params?.page || 1,
+      limit: pagination?.limit || params?.limit || 10,
+      totalPages: pagination?.pages || Math.ceil((pagination?.total || data.length) / (params?.limit || 10)),
     };
   },
 

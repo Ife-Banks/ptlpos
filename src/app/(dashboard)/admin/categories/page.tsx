@@ -73,9 +73,9 @@ export default function AdminCategoriesPage() {
         page: currentPage,
         limit: ITEMS_PER_PAGE,
       });
-      const arr = Array.isArray(response.data) ? response.data : (Array.isArray(response) ? response : []);
+      const arr = Array.isArray(response.data) ? response.data : [];
       setCategories(arr);
-      setTotal(arr.length);
+      setTotal(response.total || 0);
     } catch (err) {
       setError("Failed to load categories");
       console.error(err);
@@ -241,7 +241,7 @@ export default function AdminCategoriesPage() {
                       </TableCell>
                       <TableCell>
                         <span className="text-gray-600 dark:text-gray-400">
-                          {category.productCount || 0}
+                          {category.productCount || (category as any)._count?.products || 0}
                         </span>
                       </TableCell>
                       <TableCell>
