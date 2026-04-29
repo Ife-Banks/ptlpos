@@ -111,7 +111,8 @@ export default function AdminProductsPage() {
   const loadCategories = async () => {
     try {
       const response = await categoriesApi.list({ limit: 100 });
-      setCategories(response.data || []);
+      const arr = Array.isArray(response.data) ? response.data : (Array.isArray(response) ? response : []);
+      setCategories(arr);
     } catch (err) {
       console.error("Failed to load categories:", err);
     }
