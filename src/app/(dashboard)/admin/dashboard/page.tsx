@@ -109,6 +109,7 @@ export default function AdminDashboardPage() {
     from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
     to: new Date().toISOString().split("T")[0],
   });
+  const [selectedDays, setSelectedDays] = useState("30");
 
   const [analytics, setAnalytics] = useState<{
     revenue: number;
@@ -234,15 +235,18 @@ export default function AdminDashboardPage() {
                   : "bg-white border-gray-200 text-gray-700"
               )}
               onChange={(e) => {
-                const days = parseInt(e.target.value);
+                const days = e.target.value;
+                setSelectedDays(days);
+                const d = parseInt(days);
                 setDateRange({
-                  from: new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+                  from: new Date(Date.now() - d * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
                   to: new Date().toISOString().split("T")[0],
                 });
               }}
+              value={selectedDays}
             >
               <option value="7">Last 7 days</option>
-              <option value="30" selected>Last 30 days</option>
+              <option value="30">Last 30 days</option>
               <option value="90">Last 90 days</option>
               <option value="365">Last year</option>
             </select>
