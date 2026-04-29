@@ -220,7 +220,7 @@ export default function AdminUsersPage() {
               </TableHeader>
               <TableBody>
                 {users.map((user) => {
-                  const userRole = typeof user.role === 'string' ? user.role : 'SALES_REP';
+                  const userRole = typeof user.role === 'string' ? user.role : (user as any).role?.name || 'SALES_REP';
                   const roleBadge = getRoleBadge(userRole);
                   return (
                     <TableRow key={user.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
