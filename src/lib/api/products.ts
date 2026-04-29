@@ -14,6 +14,7 @@ export const productsApi = {
     if (filters?.search) params.append("search", filters.search);
     if (filters?.category) params.append("category", filters.category);
     if (filters?.type) params.append("type", filters.type);
+    if (filters?.barcode) params.append("barcode", filters.barcode);
     if (filters?.page) params.append("page", String(filters.page));
     if (filters?.limit) params.append("limit", String(filters.limit));
     
@@ -55,5 +56,10 @@ export const productsApi = {
   getCompositeInventory: async (id: string): Promise<Product> => {
     const response = await apiClient.get<Product>(`/products/composite/${id}/inventory`);
     return response.data;
+  },
+
+  searchByBarcode: async (barcode: string): Promise<Product | null> => {
+    const response = await apiClient.get<Product>(`/products?barcode=${encodeURIComponent(barcode)}`);
+    return response.data || null;
   },
 };

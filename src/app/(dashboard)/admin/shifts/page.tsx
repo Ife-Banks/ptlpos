@@ -46,6 +46,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { shiftsApi, type Shift } from "@/lib/api/shifts";
+import { branchesApi, type Branch } from "@/lib/api/branches";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -73,6 +74,7 @@ export default function AdminShiftsPage() {
   const [total, setTotal] = useState(0);
   const [activeShifts, setActiveShifts] = useState<Shift[]>([]);
   const [showActiveModal, setShowActiveModal] = useState(false);
+  const [branches, setBranches] = useState<Branch[]>([]);
   
   // Shift detail modal
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
@@ -100,6 +102,10 @@ export default function AdminShiftsPage() {
     return () => clearTimeout(timer);
   }, [searchQuery, selectedStatus, selectedBranch, fromDate, toDate, currentPage]);
 
+  useEffect(() => {
+    loadBranches();
+  }, []);
+
   const loadActiveShifts = async () => {
     try {
       const data = await shiftsApi.getActive();
@@ -113,6 +119,15 @@ export default function AdminShiftsPage() {
   const handleSearch = () => {
     setCurrentPage(1);
     loadShifts();
+  };
+
+  const loadBranches = async () => {
+    try {
+      const response = await branchesApi.list({ limit: 100 });
+      setBranches(response.data || []);
+    } catch (err) {
+      console.error("Failed to load branches:", err);
+    }
   };
 
   const loadShifts = async () => {
@@ -245,20 +260,49 @@ export default function AdminShiftsPage() {
             <Search className="mr-2 h-4 w-4 sm:hidden" />
             <span className="hidden sm:inline">Search</span>
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-                <Filter className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">{selectedStatus || "All Status"}</span>
-                <span className="sm:hidden">Filter</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
-              <DropdownMenuItem onClick={() => { setSelectedStatus(null); setCurrentPage(1); }}>All Status</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { setSelectedStatus("OPEN"); setCurrentPage(1); }}>Open</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { setSelectedStatus("CLOSED"); setCurrentPage(1); }}>Closed</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          
+          <div className="flex flex-wrap gap-2">
+            <Input
+              type="date"
+              value={fromDate}
+              onChange={(e) => { setFromDate(e.target.value); setCurrentPage(1); }}
+              className="w-auto bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-xs"
+            />
+            <span className="text-gray-400 self-center">-</span>
+            <Input
+              type="date"
+              value={toDate}
+              onChange={(e) => { setToDate(e.target.value); setCurrentPage(1); }}
+              className="w-auto bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-xs"
+            />
+            
+            <Select value={selectedBranch || ""} onValueChange={(v) => { setSelectedBranch(v === "__all__" ? null : v); setCurrentPage(1); }}>
+              <SelectTrigger className="w-[140px] bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <SelectValue placeholder={branches.find(b => b.id === selectedBranch)?.name || "All Branches"} />
+              </SelectTrigger>
+              <SelectContent className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+                <SelectItem value="__all__">All Branches</SelectItem>
+                {branches.map((branch) => (
+                  <SelectItem key={branch.id} value={branch.id}>{String(branch.name)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                  <Filter className="mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">{selectedStatus || "All Status"}</span>
+                  <span className="sm:hidden">Filter</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+                <DropdownMenuItem onClick={() => { setSelectedStatus(null); setCurrentPage(1); }}>All Status</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setSelectedStatus("OPEN"); setCurrentPage(1); }}>Open</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setSelectedStatus("CLOSED"); setCurrentPage(1); }}>Closed</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 

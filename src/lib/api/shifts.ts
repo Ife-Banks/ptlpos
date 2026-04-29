@@ -20,6 +20,47 @@ export interface Shift {
   createdAt: string;
 }
 
+export interface EndOfDayReport {
+  date: string;
+  shifts: Shift[];
+  totals: {
+    totalSales: number;
+    totalRevenue: number;
+    cashSales: number;
+    cardSales: number;
+  };
+}
+
+export interface EndOfShiftReport {
+  shift: Shift;
+  sales: Array<{
+    id: string;
+    total: number;
+    paymentMethod: string;
+    createdAt: string;
+  }>;
+  payments: Record<string, number>;
+  reconciliation?: {
+    expectedCash: number;
+    actualCash: number;
+    discrepancy: number;
+  };
+}
+
+export interface SalesPerformanceReport {
+  period: { from: string; to: string };
+  users: Array<{
+    userId: string;
+    userName: string;
+    totalSales: number;
+    totalRevenue: number;
+  }>;
+  totals: {
+    totalSales: number;
+    totalRevenue: number;
+  };
+}
+
 export const shiftsApi = {
   list: async (params?: {
     status?: string;
@@ -80,6 +121,67 @@ export const shiftsApi = {
     notes?: string;
   }): Promise<Shift> => {
     const response = await apiClient.post<Shift>(`/shifts/${id}/reconcile`, data);
+    return response.data;
+  },
+
+  endOfDay: async (params?: {
+    date?: string;
+    branchId?: string;
+  }): Promise<{
+    date: string;
+    shifts: Shift[];
+    totals: {
+      totalSales: number;
+      totalRevenue: number;
+      cashSales: number;
+      cardSales: number;
+    };
+  }> => {
+    const searchParams = new URLSearchParams();
+    if (params?.date) searchParams.append("date", params.date);
+    if (params?.branchId) searchParams.append("branchId", params.branchId);
+    const response = await apiClient.get(`/shifts/reports/end-of-day?${searchParams.toString()}`);
+    return response.data;
+  },
+
+  endOfShift: async (shiftId: string): Promise<{
+    shift: Shift;
+    sales: any[];
+    payments: Record<string, number>;
+    reconciliation?: {
+      expectedCash: number;
+      actualCash: number;
+      discrepancy: number;
+    };
+  }> => {
+    const response = await apiClient.get(`/shifts/reports/end-of-shift?shiftId=${shiftId}`);
+    return response.data;
+  },
+
+  salesPerformance: async (params?: {
+    userId?: string;
+    from?: string;
+    to?: string;
+    branchId?: string;
+  }): Promise<{
+    period: { from: string; to: string };
+    users: Array<{
+      userId: string;
+      userName: string;
+      totalSales: number;
+      totalRevenue: number;
+    }>;
+    totals: {
+      totalSales: number;
+      totalRevenue: number;
+    };
+  }> => {
+    const searchParams = new URLSearchParams();
+    if (params?.userId) searchParams.append("userId", params.userId);
+    if (params?.from) searchParams.append("from", params.from);
+    if (params?.to) searchParams.append("to", params.to);
+    if (params?.branchId) searchParams.append("branchId", params.branchId);
+    const response = await apiClient.get(`/shifts/reports/sales-performance?${searchParams.toString()}`);
     return response.data;
   },
 };

@@ -83,4 +83,28 @@ export const inventoryApi = {
     const response = await apiClient.post<Stocktake>(`/inventory/stocktakes/${id}/apply`);
     return response.data;
   },
+
+  getValuation: async (): Promise<{ totalValue: number; totalItems: number }> => {
+    const response = await apiClient.get<{ totalValue: number; totalItems: number }>("/inventory/valuation");
+    return response.data;
+  },
+
+  getHistory: async (params?: {
+    productId?: string;
+    branchId?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedResponse<unknown>> => {
+    const searchParams = new URLSearchParams();
+    if (params?.productId) searchParams.append("productId", params.productId);
+    if (params?.branchId) searchParams.append("branchId", params.branchId);
+    if (params?.page) searchParams.append("page", String(params.page));
+    if (params?.limit) searchParams.append("limit", String(params.limit));
+    const response = await apiClient.get<PaginatedResponse<unknown>>(`/inventory/history?${searchParams.toString()}`);
+    return response.data;
+  },
+
+  resolveAlert: async (id: string): Promise<void> => {
+    await apiClient.post(`/inventory/alerts/${id}/resolve`);
+  },
 };

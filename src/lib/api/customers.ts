@@ -50,4 +50,32 @@ export const customersApi = {
   delete: async (id: string): Promise<void> => {
     await apiClient.delete(`/customers/${id}`);
   },
+
+  getCredit: async (id: string): Promise<{ balance: number }> => {
+    const response = await apiClient.get<{ balance: number }>(`/customers/${id}/credit`);
+    return response.data;
+  },
+
+  addCredit: async (id: string, data: { amount: number; note?: string }): Promise<Customer> => {
+    const response = await apiClient.post<Customer>(`/customers/${id}/credit/add`, data);
+    return response.data;
+  },
+
+  deductCredit: async (id: string, data: { amount: number; note?: string }): Promise<Customer> => {
+    const response = await apiClient.post<Customer>(`/customers/${id}/credit/deduct`, data);
+    return response.data;
+  },
+
+  getCreditTransactions: async (id: string, params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedResponse<unknown>> => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", String(params.page));
+    if (params?.limit) searchParams.append("limit", String(params.limit));
+    const response = await apiClient.get<PaginatedResponse<unknown>>(
+      `/customers/${id}/credit/transactions?${searchParams.toString()}`
+    );
+    return response.data;
+  },
 };

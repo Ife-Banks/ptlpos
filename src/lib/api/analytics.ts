@@ -1,5 +1,16 @@
 import apiClient from "./client";
-import type { DashboardAnalytics } from "@/types/api";
+import type { DashboardAnalytics, PaginatedResponse } from "@/types/api";
+
+export interface SystemMetrics {
+  totalSales: number;
+  totalRevenue: number;
+  totalUsers: number;
+  totalProducts: number;
+  totalCustomers: number;
+  uptime: number;
+  cpuUsage: number;
+  memoryUsage: number;
+}
 
 export const analyticsApi = {
   getDashboard: async (params?: {
@@ -15,6 +26,27 @@ export const analyticsApi = {
     const response = await apiClient.get<DashboardAnalytics>(
       `/analytics/dashboard?${searchParams.toString()}`
     );
+    return response.data;
+  },
+
+  getMetrics: async (): Promise<SystemMetrics> => {
+    const response = await apiClient.get<SystemMetrics>("/metrics");
+    return response.data;
+  },
+
+  exportSales: async (params?: {
+    from?: string;
+    to?: string;
+    branchId?: string;
+  }): Promise<Blob> => {
+    const searchParams = new URLSearchParams();
+    if (params?.from) searchParams.append("from", params.from);
+    if (params?.to) searchParams.append("to", params.to);
+    if (params?.branchId) searchParams.append("branchId", params.branchId);
+    
+    const response = await apiClient.get(`/exports/sales?${searchParams.toString()}`, {
+      responseType: "blob",
+    });
     return response.data;
   },
 };

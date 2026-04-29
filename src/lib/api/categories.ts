@@ -5,6 +5,9 @@ export interface Category {
   id: string;
   name: string;
   description?: string;
+  parentId?: string;
+  parent?: Category;
+  productCount?: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -31,12 +34,12 @@ export const categoriesApi = {
     return response.data;
   },
 
-  create: async (data: { name: string; description?: string; isActive?: boolean }): Promise<Category> => {
+  create: async (data: { name: string; description?: string; parentId?: string; isActive?: boolean }): Promise<Category> => {
     const response = await apiClient.post<Category>("/categories", data);
     return response.data;
   },
 
-  update: async (id: string, data: { name?: string; description?: string; isActive?: boolean }): Promise<Category> => {
+  update: async (id: string, data: { name?: string; description?: string; parentId?: string; isActive?: boolean }): Promise<Category> => {
     const response = await apiClient.patch<Category>(`/categories/${id}`, data);
     return response.data;
   },

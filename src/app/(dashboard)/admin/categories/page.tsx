@@ -47,6 +47,7 @@ export default function AdminCategoriesPage() {
   const [newCategory, setNewCategory] = useState({
     name: "",
     description: "",
+    parentId: "",
     isActive: true,
   });
   const [isSaving, setIsSaving] = useState(false);
@@ -92,24 +93,24 @@ export default function AdminCategoriesPage() {
     setIsSaving(true);
     setError("");
     try {
+      const categoryData = {
+        name: newCategory.name,
+        description: newCategory.description || undefined,
+        parentId: newCategory.parentId || undefined,
+        isActive: newCategory.isActive,
+      };
+      
       if (editingCategory) {
-        await categoriesApi.update(editingCategory.id, {
-          name: newCategory.name,
-          description: newCategory.description,
-          isActive: newCategory.isActive,
-        });
+        await categoriesApi.update(editingCategory.id, categoryData);
       } else {
-        await categoriesApi.create({
-          name: newCategory.name,
-          description: newCategory.description,
-          isActive: newCategory.isActive,
-        });
+        await categoriesApi.create(categoryData);
       }
       setIsCreateModalOpen(false);
       setEditingCategory(null);
       setNewCategory({
         name: "",
         description: "",
+        parentId: "",
         isActive: true,
       });
       loadCategories();
@@ -136,6 +137,7 @@ export default function AdminCategoriesPage() {
     setNewCategory({
       name: category.name,
       description: category.description || "",
+      parentId: category.parentId || "",
       isActive: category.isActive,
     });
     setEditingCategory(category);
@@ -155,6 +157,7 @@ export default function AdminCategoriesPage() {
             setNewCategory({
               name: "",
               description: "",
+              parentId: "",
               isActive: true,
             });
             setEditingCategory(null);
@@ -206,9 +209,9 @@ export default function AdminCategoriesPage() {
               <TableHeader>
                 <TableRow className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-800">
                   <TableHead className="text-gray-600 dark:text-gray-400 font-medium">Category</TableHead>
-                  <TableHead className="text-gray-600 dark:text-gray-400 font-medium">Description</TableHead>
+                  <TableHead className="text-gray-600 dark:text-gray-400 font-medium">Parent</TableHead>
+                  <TableHead className="text-gray-600 dark:text-gray-400 font-medium">Products</TableHead>
                   <TableHead className="text-gray-600 dark:text-gray-400 font-medium">Status</TableHead>
-                  <TableHead className="text-gray-600 dark:text-gray-400 font-medium">Created</TableHead>
                   <TableHead className="w-10"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -232,18 +235,18 @@ export default function AdminCategoriesPage() {
                       </TableCell>
                       <TableCell>
                         <span className="text-gray-600 dark:text-gray-400">
-                          {category.description || "-"}
+                          {category.parent?.name || (category.parentId ? "Parent" : "-")}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-gray-600 dark:text-gray-400">
+                          {category.productCount || 0}
                         </span>
                       </TableCell>
                       <TableCell>
                         <Badge className={category.isActive ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"}>
                           {category.isActive ? "Active" : "Inactive"}
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-gray-500 dark:text-gray-400">
-                          {category.createdAt ? new Date(category.createdAt).toLocaleDateString() : "-"}
-                        </span>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -339,6 +342,20 @@ export default function AdminCategoriesPage() {
                 onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
                 className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white"
               />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="parentId" className="text-sm font-medium text-gray-700 dark:text-gray-300">Parent Category</label>
+              <select
+                id="parentId"
+                className="flex h-10 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#003D9B] dark:focus:ring-[#0066FF] focus:ring-offset-2"
+                value={newCategory.parentId}
+                onChange={(e) => setNewCategory({ ...newCategory, parentId: e.target.value })}
+              >
+                <option value="">No parent (top level)</option>
+                {categories.filter(c => c.id !== editingCategory?.id).map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
             </div>
             <div className="grid gap-2">
               <label htmlFor="description" className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>

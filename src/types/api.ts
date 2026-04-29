@@ -134,6 +134,7 @@ export interface Product {
   tenantId: string;
   name: string;
   sku: string;
+  barcode?: string;
   type: ProductType;
   price: number;
   cost?: number;
@@ -165,6 +166,7 @@ export interface ProductFilters {
   search?: string;
   category?: string;
   type?: ProductType;
+  barcode?: string;
   page?: number;
   limit?: number;
 }
