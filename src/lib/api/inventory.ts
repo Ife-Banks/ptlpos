@@ -18,10 +18,17 @@ export const inventoryApi = {
     if (params?.page) searchParams.append("page", String(params.page));
     if (params?.limit) searchParams.append("limit", String(params.limit));
     
-    const response = await apiClient.get<PaginatedResponse<InventoryItem>>(
+    const response = await apiClient.get<InventoryItem[]>(
       `/inventory?${searchParams.toString()}`
     );
-    return response.data;
+    const data = response.data || [];
+    return {
+      data,
+      total: data.length,
+      page: params?.page || 1,
+      limit: params?.limit || 10,
+      totalPages: Math.ceil(data.length / (params?.limit || 10)),
+    };
   },
 
   getLowStock: async (threshold?: number): Promise<InventoryItem[]> => {

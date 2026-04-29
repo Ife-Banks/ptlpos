@@ -12,10 +12,17 @@ export const customersApi = {
     if (params?.page) searchParams.append("page", String(params.page));
     if (params?.limit) searchParams.append("limit", String(params.limit));
     
-    const response = await apiClient.get<PaginatedResponse<Customer>>(
+    const response = await apiClient.get<Customer[]>(
       `/customers?${searchParams.toString()}`
     );
-    return response.data;
+    const data = response.data || [];
+    return {
+      data,
+      total: data.length,
+      page: params?.page || 1,
+      limit: params?.limit || 10,
+      totalPages: Math.ceil(data.length / (params?.limit || 10)),
+    };
   },
 
   get: async (id: string): Promise<Customer> => {

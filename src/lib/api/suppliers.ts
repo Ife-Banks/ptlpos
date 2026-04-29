@@ -22,8 +22,15 @@ export const suppliersApi = {
     if (params?.page) searchParams.append("page", String(params.page));
     if (params?.limit) searchParams.append("limit", String(params.limit));
     if (params?.search) searchParams.append("search", params.search);
-    const response = await apiClient.get<PaginatedResponse<Supplier>>(`/suppliers?${searchParams.toString()}`);
-    return response.data;
+    const response = await apiClient.get<Supplier[]>(`/suppliers?${searchParams.toString()}`);
+    const data = response.data || [];
+    return {
+      data,
+      total: data.length,
+      page: params?.page || 1,
+      limit: params?.limit || 10,
+      totalPages: Math.ceil(data.length / (params?.limit || 10)),
+    };
   },
 
   get: async (id: string): Promise<Supplier> => {
