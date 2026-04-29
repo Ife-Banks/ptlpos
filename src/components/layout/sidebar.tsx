@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuthStore, useUIStore } from "@/stores";
+import { useTheme } from "@/components/providers/theme-provider";
 import { 
   LayoutDashboard, 
   Package, 
@@ -82,8 +83,9 @@ const salesNavItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, logout, tenant } = useAuthStore();
   const { isSidebarCollapsed, toggleSidebar } = useUIStore();
+  const { theme } = useTheme();
   
   const role = user?.role;
   let navItems: { href: string; label: string; icon: React.ComponentType<{ className?: string }> }[] = [];
@@ -131,18 +133,27 @@ export function Sidebar() {
     >
       {/* Logo */}
       <div className="flex h-14 items-center justify-between px-3 border-b border-gray-200 dark:border-gray-800">
-        {!isSidebarCollapsed && (
+        {!isSidebarCollapsed ? (
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#003D9B] dark:bg-[#0066FF] rounded-lg flex items-center justify-center">
-              <ShoppingCart className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
+              <img 
+                src={theme === "dark" ? "/logo-Dark.png" : "/logo-Light.png"} 
+                alt="Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
-            <span className="text-lg font-bold text-[#003D9B] dark:text-[#0066FF]">PTLPOS</span>
+            <span className="text-lg font-bold text-[#003D9B] dark:text-[#0066FF]">
+              {tenant?.name || "PTLPOS"}
+            </span>
           </Link>
-        )}
-        {isSidebarCollapsed && (
+        ) : (
           <Link href="/" className="flex items-center justify-center mx-auto">
-            <div className="w-8 h-8 bg-[#003D9B] dark:bg-[#0066FF] rounded-lg flex items-center justify-center">
-              <ShoppingCart className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
+              <img 
+                src={theme === "dark" ? "/logo-Dark.png" : "/logo-Light.png"} 
+                alt="Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
           </Link>
         )}
