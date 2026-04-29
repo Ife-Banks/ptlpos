@@ -74,8 +74,9 @@ export default function ManagerSuppliersPage() {
         page: currentPage,
         limit: ITEMS_PER_PAGE,
       });
-      setSuppliers(response.data || []);
-      setTotal(response.total || 0);
+      const arr = Array.isArray(response.data) ? response.data : [];
+      setSuppliers(arr);
+      setTotal(response.total || arr.length);
     } catch (err) {
       setError("Failed to load suppliers");
       console.error(err);

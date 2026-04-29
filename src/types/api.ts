@@ -87,6 +87,14 @@ export interface ReceiptSettings {
   customFooter?: string;
   showCustomerName: boolean;
   showCustomerPhone: boolean;
+  headerText?: string;
+  footerText?: string;
+  showLogo?: boolean;
+  showBranchName?: boolean;
+  showCashierName?: boolean;
+  showDate?: boolean;
+  showInvoiceNumber?: boolean;
+  paperSize?: string;
 }
 
 // ===========================================
@@ -245,10 +253,12 @@ export interface Sale {
   status: SaleStatus;
   items: SaleItem[];
   subtotal: number;
+  totalAmount?: number;
   taxAmount: number;
   discountAmount: number;
   total: number;
   payments?: Payment[];
+  paymentMethod?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -262,10 +272,12 @@ export interface SaleItem {
   variant?: ProductVariant;
   quantity: number;
   unitPrice: number;
+  price?: number;
   discount: number;
   taxRate: number;
   taxAmount: number;
   total: number;
+  lineTotal?: number;
 }
 
 export interface CreateSaleItem {
@@ -315,6 +327,7 @@ export interface Customer {
   phone?: string;
   address?: string;
   totalPurchases: number;
+  creditBalance?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -479,6 +492,7 @@ export interface DashboardAnalytics {
   customersCountChange: number;
   inventoryValue: number;
   topProducts: TopProduct[];
+  recentSales: { id: string; saleNumber?: string; customerName?: string; customer?: { name: string }; totalAmount?: number; total?: number; status: string; createdAt: string }[];
   salesTrend: SalesTrendData[];
   staffPerformance: StaffPerformance[];
 }

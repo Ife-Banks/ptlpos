@@ -64,7 +64,11 @@ const superAdminNavItems = [
 
 const managerNavItems = [
   { href: "/manager/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/manager/branches", label: "Branches", icon: Building2 },
+  { href: "/manager/products", label: "Products", icon: Package },
+  { href: "/manager/categories", label: "Categories", icon: Tags },
   { href: "/manager/sales", label: "Sales", icon: Receipt },
+  { href: "/manager/shifts", label: "Shifts", icon: Clock },
   { href: "/manager/inventory", label: "Inventory", icon: Warehouse },
   { href: "/manager/inventory/transfers", label: "Transfers", icon: ArrowLeftRight },
   { href: "/manager/inventory/stocktake", label: "Stocktake", icon: RotateCcw },
@@ -72,6 +76,8 @@ const managerNavItems = [
   { href: "/manager/purchases", label: "Purchases", icon: PackagePlus },
   { href: "/manager/suppliers", label: "Suppliers", icon: Truck },
   { href: "/manager/customers", label: "Customers", icon: Users },
+  { href: "/manager/reports", label: "Reports", icon: BarChart3 },
+  { href: "/manager/settings", label: "Settings", icon: Settings },
 ];
 
 const salesNavItems = [

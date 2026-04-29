@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -18,57 +18,90 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, MoreHorizontal, FileText, Package, ClipboardList, Calendar, DollarSign, CheckCircle, Clock, XCircle, RotateCcw } from "lucide-react";
+import { Plus, Search, MoreHorizontal, FileText, Package, ClipboardList, Calendar, DollarSign, CheckCircle, Clock, XCircle, RotateCcw, Loader2 } from "lucide-react";
 import { useTheme } from "@/components/providers/theme-provider";
+import { ordersApi } from "@/lib/api/orders";
+import type { Order, OrderStatus } from "@/types/api";
 import { cn } from "@/lib/utils";
 
-const mockOrders = [
-  { id: "ORD-1234", saleNumber: "SAL-2024-1234", customer: "John Doe", items: 3, total: 234.5, status: "Completed", createdAt: "Oct 15, 2024 10:30 AM" },
-  { id: "ORD-1233", saleNumber: "SAL-2024-1233", customer: "Jane Smith", items: 2, total: 156.0, status: "Pending", createdAt: "Oct 15, 2024 10:15 AM" },
-  { id: "ORD-1232", saleNumber: "SAL-2024-1232", customer: "Mike Johnson", items: 5, total: 89.99, status: "Completed", createdAt: "Oct 15, 2024 09:45 AM" },
-  { id: "ORD-1231", saleNumber: "SAL-2024-1231", customer: "Sarah Wilson", items: 1, total: 450.0, status: "Cancelled", createdAt: "Oct 15, 2024 09:20 AM" },
-  { id: "ORD-1230", saleNumber: "SAL-2024-1230", customer: "Tom Brown", items: 4, total: 178.25, status: "Refunded", createdAt: "Oct 14, 2024 06:30 PM" },
-  { id: "ORD-1229", saleNumber: "SAL-2024-1229", customer: "Emily Davis", items: 2, total: 320.0, status: "Completed", createdAt: "Oct 14, 2024 05:00 PM" },
-  { id: "ORD-1228", saleNumber: "SAL-2024-1228", customer: "Walk-in", items: 1, total: 59.99, status: "Completed", createdAt: "Oct 14, 2024 04:15 PM" },
-];
+const statusFilters = ["All", "PENDING", "PARTIAL", "FULFILLED", "CANCELLED"];
 
-const statusFilters = ["All", "Completed", "Pending", "Cancelled", "Refunded"];
+const getStatusBadge = (status: OrderStatus) => {
+  switch (status) {
+    case "FULFILLED":
+      return { label: "Completed", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: CheckCircle };
+    case "PENDING":
+      return { label: "Pending", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", icon: Clock };
+    case "PARTIAL":
+      return { label: "Partial", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", icon: Clock };
+    case "CANCELLED":
+      return { label: "Cancelled", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", icon: XCircle };
+    default:
+      return { label: status, color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300", icon: ClipboardList };
+  }
+};
 
-export default function OrdersPage() {
+const ITEMS_PER_PAGE = 15;
+
+export default function ManagerOrdersPage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [total, setTotal] = useState(0);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "Completed":
-        return { label: "Completed", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: CheckCircle };
-      case "Pending":
-        return { label: "Pending", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", icon: Clock };
-      case "Cancelled":
-        return { label: "Cancelled", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", icon: XCircle };
-      case "Refunded":
-        return { label: "Refunded", color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400", icon: RotateCcw };
-      default:
-        return { label: status, color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300", icon: ClipboardList };
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadOrders();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [statusFilter, currentPage]);
+
+  const loadOrders = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const params: { status?: string; page: number; limit: number } = {
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
+      };
+      if (statusFilter !== "All") {
+        params.status = statusFilter;
+      }
+      const result = await ordersApi.list(params);
+      setOrders(Array.isArray(result.data) ? result.data : []);
+      setTotal(result.total);
+    } catch (err) {
+      setError("Failed to load orders");
+      setOrders([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const filteredOrders = mockOrders.filter((order) => {
-    const matchesSearch = search === "" ||
-      order.saleNumber.toLowerCase().includes(search.toLowerCase()) ||
-      order.customer.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "All" || order.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const handleSearch = () => {
+    setCurrentPage(1);
+    loadOrders();
+  };
+
+  const filteredOrders = orders.filter((order) => {
+    const matchesSearch =
+      search === "" ||
+      (order.orderNumber || "").toLowerCase().includes(search.toLowerCase()) ||
+      ((order as any).customer?.name || "").toLowerCase().includes(search.toLowerCase());
+    return matchesSearch;
   });
 
   const stats = {
-    total: mockOrders.length,
-    completed: mockOrders.filter(o => o.status === "Completed").length,
-    pending: mockOrders.filter(o => o.status === "Pending").length,
-    revenue: mockOrders.filter(o => o.status === "Completed").reduce((sum, o) => sum + o.total, 0),
+    total: total,
+    completed: orders.filter(o => o.status === "FULFILLED").length,
+    pending: orders.filter(o => o.status === "PENDING").length,
+    revenue: orders.filter(o => o.status === "FULFILLED").reduce((sum, o) => sum + (o.total || 0), 0),
   };
 
   return (
@@ -155,6 +188,7 @@ export default function OrdersPage() {
                 placeholder="Search by order # or customer..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 className={cn(
                   "pl-9",
                   isDark ? "bg-gray-800 border-gray-700" : "bg-gray-50 border-gray-200"
@@ -165,7 +199,10 @@ export default function OrdersPage() {
               {statusFilters.map((status) => (
                 <button
                   key={status}
-                  onClick={() => setStatusFilter(status)}
+                  onClick={() => {
+                    setStatusFilter(status);
+                    setCurrentPage(1);
+                  }}
                   className={cn(
                     "px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200",
                     statusFilter === status
@@ -181,72 +218,89 @@ export default function OrdersPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className={cn(isDark ? "bg-gray-800/50" : "bg-gray-50")}>
-                <TableHead className={cn(isDark ? "text-gray-400" : "text-gray-600")}>Order #</TableHead>
-                <TableHead className={cn(isDark ? "text-gray-400" : "text-gray-600")}>Customer</TableHead>
-                <TableHead className={cn(isDark ? "text-gray-400" : "text-gray-600")}>Items</TableHead>
-                <TableHead className={cn("text-right", isDark ? "text-gray-400" : "text-gray-600")}>Total</TableHead>
-                <TableHead className={cn(isDark ? "text-gray-400" : "text-gray-600")}>Status</TableHead>
-                <TableHead className={cn(isDark ? "text-gray-400" : "text-gray-600")}>Date</TableHead>
-                <TableHead className="w-10"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredOrders.map((order) => {
-                const status = getStatusBadge(order.status);
-                const StatusIcon = status.icon;
-                return (
-                  <TableRow 
-                    key={order.id}
-                    className={cn(
-                      "transition-colors",
-                      isDark ? "hover:bg-gray-800/50" : "hover:bg-gray-50"
-                    )}
-                  >
-                    <TableCell className="font-medium font-mono text-gray-900 dark:text-white">{order.saleNumber}</TableCell>
-                    <TableCell className="text-gray-900 dark:text-white">{order.customer}</TableCell>
-                    <TableCell className="text-gray-600 dark:text-gray-400">{order.items} items</TableCell>
-                    <TableCell className="text-right font-medium text-gray-900 dark:text-white">
-                      ${order.total.toFixed(2)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={cn("flex items-center gap-1 w-fit", status.color)}>
-                        <StatusIcon className="h-3 w-3" />
-                        {status.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-gray-500 dark:text-gray-400">{order.createdAt}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className={cn(isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200")}>
-                          <DropdownMenuItem className={cn(isDark ? "focus:bg-gray-700" : "")}>
-                            <FileText className="mr-2 h-4 w-4" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className={cn(isDark ? "focus:bg-gray-700" : "")}>Create Invoice</DropdownMenuItem>
-                          <DropdownMenuItem className={cn(isDark ? "focus:bg-gray-700" : "")}>Print Receipt</DropdownMenuItem>
-                          {order.status === "Pending" && (
-                            <DropdownMenuItem className={cn(isDark ? "focus:bg-gray-700" : "")}>Mark Complete</DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          {loading ? (
+            <div className="text-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-red-500">{error}</p>
+            </div>
+          ) : filteredOrders.length === 0 ? (
+            <div className="text-center py-12">
+              <ClipboardList className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-500 dark:text-gray-400">No orders found</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className={cn(isDark ? "bg-gray-800/50" : "bg-gray-50")}>
+                  <TableHead className={cn(isDark ? "text-gray-400" : "text-gray-600")}>Order #</TableHead>
+                  <TableHead className={cn(isDark ? "text-gray-400" : "text-gray-600")}>Customer</TableHead>
+                  <TableHead className={cn(isDark ? "text-gray-400" : "text-gray-600")}>Items</TableHead>
+                  <TableHead className={cn("text-right", isDark ? "text-gray-400" : "text-gray-600")}>Total</TableHead>
+                  <TableHead className={cn(isDark ? "text-gray-400" : "text-gray-600")}>Status</TableHead>
+                  <TableHead className={cn(isDark ? "text-gray-400" : "text-gray-600")}>Date</TableHead>
+                  <TableHead className="w-10"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredOrders.map((order) => {
+                  const status = getStatusBadge(order.status);
+                  const StatusIcon = status.icon;
+                  return (
+                    <TableRow 
+                      key={order.id}
+                      className={cn(
+                        "transition-colors",
+                        isDark ? "hover:bg-gray-800/50" : "hover:bg-gray-50"
+                      )}
+                    >
+                      <TableCell className="font-medium font-mono text-gray-900 dark:text-white">{order.orderNumber}</TableCell>
+                      <TableCell className="text-gray-900 dark:text-white">{(order as any).customer?.name || "Walk-in"}</TableCell>
+                      <TableCell className="text-gray-600 dark:text-gray-400">{order.items?.length || 0} items</TableCell>
+                      <TableCell className="text-right font-medium text-gray-900 dark:text-white">
+                        ${Number(order.total || 0).toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={cn("flex items-center gap-1 w-fit", status.color)}>
+                          <StatusIcon className="h-3 w-3" />
+                          {status.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-gray-500 dark:text-gray-400">
+                        {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "-"}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className={cn(isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200")}>
+                            <DropdownMenuItem className={cn(isDark ? "focus:bg-gray-700" : "")}>
+                              <FileText className="mr-2 h-4 w-4" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className={cn(isDark ? "focus:bg-gray-700" : "")}>Create Invoice</DropdownMenuItem>
+                            <DropdownMenuItem className={cn(isDark ? "focus:bg-gray-700" : "")}>Print Receipt</DropdownMenuItem>
+                            {order.status === "PENDING" && (
+                              <DropdownMenuItem className={cn(isDark ? "focus:bg-gray-700" : "")}>Mark Complete</DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
         </div>
       </div>
     </div>
