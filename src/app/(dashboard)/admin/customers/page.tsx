@@ -266,7 +266,7 @@ export default function AdminCustomersPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <span className="font-medium text-gray-900 dark:text-white">
-                          ${(customer as any).creditBalance?.toFixed(2) || "0.00"}
+                          ${Number((customer as any).creditBalance || 0).toFixed(2)}
                         </span>
                       </TableCell>
                       <TableCell className="text-gray-500 dark:text-gray-400">
