@@ -75,8 +75,9 @@ export default function AdminBranchesPage() {
         page: currentPage,
         limit: ITEMS_PER_PAGE,
       });
-      setBranches(response.data || []);
-      setTotal(response.total || 0);
+      const arr = Array.isArray(response.data) ? response.data : (Array.isArray(response) ? response : []);
+      setBranches(arr);
+      setTotal(response.total || arr.length);
     } catch (err) {
       setError("Failed to load branches");
       console.error(err);

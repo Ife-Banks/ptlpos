@@ -22,8 +22,15 @@ export const branchesApi = {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.append("page", String(params.page));
     if (params?.limit) searchParams.append("limit", String(params.limit));
-    const response = await apiClient.get<PaginatedResponse<Branch>>(`/branches?${searchParams.toString()}`);
-    return response.data;
+    const response = await apiClient.get<Branch[]>(`/branches?${searchParams.toString()}`);
+    const data = response.data || [];
+    return {
+      data,
+      total: data.length,
+      page: params?.page || 1,
+      limit: params?.limit || 10,
+      totalPages: Math.ceil(data.length / (params?.limit || 10)),
+    };
   },
 
   get: async (id: string): Promise<Branch> => {

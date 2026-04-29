@@ -86,7 +86,8 @@ export default function AdminInventoryPage() {
   const loadBranches = async () => {
     try {
       const response = await branchesApi.list({ limit: 100 });
-      setBranches(response.data || []);
+      const arr = Array.isArray(response.data) ? response.data : (Array.isArray(response) ? response : []);
+      setBranches(arr);
     } catch (err) {
       console.error("Failed to load branches:", err);
     }
