@@ -162,7 +162,7 @@ export default function AdminAuditPage() {
                   <TableHead className="text-gray-600 dark:text-gray-400 font-medium">User</TableHead>
                   <TableHead className="text-gray-600 dark:text-gray-400 font-medium">Action</TableHead>
                   <TableHead className="text-gray-600 dark:text-gray-400 font-medium">Entity</TableHead>
-                  <TableHead className="text-gray-600 dark:text-gray-400 font-medium">Entity ID</TableHead>
+                  <TableHead className="text-gray-600 dark:text-gray-400 font-medium">IP Address</TableHead>
                   <TableHead className="text-gray-600 dark:text-gray-400 font-medium">Timestamp</TableHead>
                 </TableRow>
               </TableHeader>
@@ -184,7 +184,7 @@ export default function AdminAuditPage() {
                         <span className="text-gray-900 dark:text-white">{log.entity}</span>
                       </TableCell>
                       <TableCell>
-                        <span className="text-gray-500 dark:text-gray-400 font-mono text-sm">{log.entityId || "-"}</span>
+                        <span className="text-cyan-600 dark:text-cyan-400 font-mono text-sm">{log.ipAddress || "-"}</span>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">

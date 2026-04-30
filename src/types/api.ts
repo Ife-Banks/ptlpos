@@ -289,7 +289,7 @@ export interface CreateSaleItem {
 }
 
 export interface CompleteSaleRequest {
-  paymentMethod: "CASH" | "CARD" | "OTHER";
+  paymentMethod: "CASH" | "CARD" | "TRANSFER" | "STORE_CREDIT" | "OTHER";
   paidAmount: number;
 }
 
@@ -297,7 +297,7 @@ export interface CompleteSaleRequest {
 // PAYMENT TYPES
 // ===========================================
 
-export type PaymentMethod = "CASH" | "CARD" | "OTHER";
+export type PaymentMethod = "CASH" | "CARD" | "TRANSFER" | "STORE_CREDIT" | "OTHER";
 export type PaymentStatus = "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
 
 export interface Payment {

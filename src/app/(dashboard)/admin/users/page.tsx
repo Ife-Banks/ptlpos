@@ -69,8 +69,14 @@ export default function AdminUsersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", email: "" });
+  const [newRole, setNewRole] = useState<UserRole | null>(null);
   const [newUser, setNewUser] = useState({ name: "", email: "", password: "", roleId: "" });
   const [isCreating, setIsCreating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -129,6 +135,66 @@ export default function AdminUsersPage() {
     } finally {
       setIsCreating(false);
     }
+  };
+
+  const handleEditUser = async () => {
+    if (!selectedUser || !editForm.name || !editForm.email) {
+      setError("Please fill in all fields");
+      return;
+    }
+    setIsSaving(true);
+    setError("");
+    try {
+      await usersApi.update(selectedUser.id, {
+        name: editForm.name,
+        email: editForm.email,
+      });
+      setIsEditModalOpen(false);
+      setSelectedUser(null);
+      setEditForm({ name: "", email: "" });
+      loadUsers();
+    } catch (err) {
+      setError("Failed to update user");
+      console.error(err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleChangeRole = async () => {
+    if (!selectedUser || !newRole) {
+      setError("Please select a role");
+      return;
+    }
+    setIsSaving(true);
+    setError("");
+    try {
+      await usersApi.update(selectedUser.id, {
+        role: newRole,
+      });
+      setIsRoleModalOpen(false);
+      setSelectedUser(null);
+      setNewRole(null);
+      loadUsers();
+    } catch (err) {
+      setError("Failed to update role");
+      console.error(err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const openEditModal = (user: User) => {
+    setSelectedUser(user);
+    setEditForm({ name: String(user.name), email: String(user.email) });
+    setIsEditModalOpen(true);
+  };
+
+  const openRoleModal = (user: User) => {
+    const currentRole = typeof user.role === 'string' ? user.role : (user as any).role?.name || 'SALES_REP';
+    setSelectedUser(user);
+    setNewRole(currentRole as UserRole);
+    setIsRoleModalOpen(true);
   };
 
   const handleDeleteUser = async (userId: string) => {
@@ -255,8 +321,8 @@ export default function AdminUsersPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
-                            <DropdownMenuItem>Edit User</DropdownMenuItem>
-                            <DropdownMenuItem>Change Role</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openEditModal(user)}>Edit User</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openRoleModal(user)}>Change Role</DropdownMenuItem>
                             <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteUser(user.id)}>Delete User</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -375,6 +441,103 @@ export default function AdminUsersPage() {
             >
               {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Save User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900 dark:text-white">Edit User</DialogTitle>
+            <DialogDescription className="text-gray-500 dark:text-gray-400">
+              Update user information for {selectedUser?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <label htmlFor="editName" className="text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+              <Input
+                id="editName"
+                placeholder="John Doe"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="editEmail" className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+              <Input
+                id="editEmail"
+                type="email"
+                placeholder="john@example.com"
+                value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white"
+              />
+            </div>
+            {error && <p className="text-sm text-red-500">{error}</p>}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditModalOpen(false)}
+              className="border-gray-200 dark:border-gray-700"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleEditUser}
+              disabled={isSaving}
+              className="bg-[#003D9B] hover:bg-[#003D9B]/90 dark:bg-[#0066FF] dark:hover:bg-[#0066FF]/90 text-white"
+            >
+              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isRoleModalOpen} onOpenChange={setIsRoleModalOpen}>
+        <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900 dark:text-white">Change Role</DialogTitle>
+            <DialogDescription className="text-gray-500 dark:text-gray-400">
+              Change the role for {selectedUser?.name}. This will update their permissions immediately.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <label htmlFor="newRole" className="text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+              <select
+                id="newRole"
+                className="flex h-10 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#003D9B] dark:focus:ring-[#0066FF] focus:ring-offset-2"
+                value={newRole || ""}
+                onChange={(e) => setNewRole(e.target.value as UserRole)}
+              >
+                <option value="">Select role</option>
+                {roles.map((role) => (
+                  <option key={role} value={role}>{role}</option>
+                ))}
+              </select>
+            </div>
+            {error && <p className="text-sm text-red-500">{error}</p>}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsRoleModalOpen(false)}
+              className="border-gray-200 dark:border-gray-700"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleChangeRole}
+              disabled={isSaving}
+              className="bg-[#003D9B] hover:bg-[#003D9B]/90 dark:bg-[#0066FF] dark:hover:bg-[#0066FF]/90 text-white"
+            >
+              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Update Role
             </Button>
           </DialogFooter>
         </DialogContent>

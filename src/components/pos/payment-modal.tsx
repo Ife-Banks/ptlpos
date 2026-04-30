@@ -20,7 +20,7 @@ interface PaymentModalProps {
   open: boolean;
   onClose: () => void;
   total: number;
-  onComplete: () => void;
+  onComplete: (paymentData: { method: string; amount: number }) => void;
   isProcessing?: boolean;
 }
 
@@ -41,6 +41,7 @@ export function PaymentModal({
   const [splitPayments, setSplitPayments] = useState<{ method: string; amount: string }[]>([
     { method: "CASH", amount: "" }
   ]);
+  const [otherMethod, setOtherMethod] = useState<"TRANSFER" | "STORE_CREDIT" | null>(null);
 
   const tenderedAmount = parseFloat(cashTendered) || 0;
   const change = tenderedAmount - total;
@@ -55,13 +56,54 @@ export function PaymentModal({
       setActiveTab("cash");
       setIsComplete(false);
       setSplitPayments([{ method: "CASH", amount: "" }]);
+      setOtherMethod(null);
     }
   }, [open]);
 
-  const handleComplete = () => {
-    onComplete();
-    setIsComplete(true);
-  };
+const handleComplete = () => {
+      let paymentData: { method: string; amount: number };
+      
+      if (activeTab === "cash") {
+        paymentData = { 
+          method: "CASH", 
+          amount: parseFloat(cashTendered) || 0 
+        };
+      } else if (activeTab === "card") {
+        paymentData = { 
+          method: "CARD", 
+          amount: total 
+        };
+      } else if (activeTab === "other") {
+        // Handle TRANSFER and STORE_CREDIT
+        if (otherMethod === "TRANSFER") {
+          paymentData = { 
+            method: "TRANSFER", 
+            amount: total 
+          };
+        } else if (otherMethod === "STORE_CREDIT") {
+          paymentData = { 
+            method: "STORE_CREDIT", 
+            amount: total 
+          };
+        } else {
+          paymentData = { 
+            method: "OTHER", 
+            amount: total 
+          };
+        }
+      } else { // split
+        // For split, we'll use the first payment method for simplicity
+        // In a real implementation, you might want to create multiple payments
+        const firstPayment = splitPayments[0];
+        paymentData = { 
+          method: firstPayment.method as "CASH" | "CARD" | "OTHER" | "TRANSFER" | "STORE_CREDIT",
+          amount: parseFloat(firstPayment.amount) || 0
+        };
+      }
+      
+      onComplete(paymentData);
+      setIsComplete(true);
+    };
 
   const addSplitRow = () => {
     setSplitPayments([...splitPayments, { method: "CASH", amount: "" }]);
@@ -334,30 +376,61 @@ export function PaymentModal({
           </TabsContent>
 
           {/* Other Payment */}
-          <TabsContent value="other" className="pt-6">
-            <div className={cn(
-              "flex flex-col items-center justify-center py-12 rounded-xl",
-              isDark ? "bg-gray-800/50" : "bg-gray-50"
-            )}>
-              <div className={cn(
-                "w-20 h-20 rounded-full flex items-center justify-center mb-4",
-                isDark ? "bg-purple-500/20" : "bg-purple-100"
-              )}>
-                <Wallet className={cn("h-10 w-10", isDark ? "text-purple-400" : "text-purple-600")} />
-              </div>
-              <p className={cn("text-lg font-medium mb-1", isDark ? "text-white" : "text-gray-900")}>
-                Other Payment Methods
-              </p>
-              <p className={cn("text-sm mb-4", isDark ? "text-gray-400" : "text-gray-500")}>
-                Bank transfer, gift card, or store credit
-              </p>
-              <p className={cn(
-                "text-2xl font-bold",
-                isDark ? "text-white" : "text-gray-900"
-              )}>
-                {formatCurrency(total)}
-              </p>
+          <TabsContent value="other" className="pt-6 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setOtherMethod("TRANSFER")}
+                className={cn(
+                  "flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all",
+                  otherMethod === "TRANSFER"
+                    ? isDark ? "border-purple-500 bg-purple-500/20" : "border-purple-500 bg-purple-50"
+                    : isDark ? "border-gray-700 hover:border-gray-600" : "border-gray-200 hover:border-gray-300"
+                )}
+              >
+                <div className={cn(
+                  "w-12 h-12 rounded-full flex items-center justify-center mb-2",
+                  isDark ? "bg-purple-500/20" : "bg-purple-100"
+                )}>
+                  <Wallet className={cn("h-6 w-6", isDark ? "text-purple-400" : "text-purple-600")} />
+                </div>
+                <span className={cn("font-medium", isDark ? "text-white" : "text-gray-900")}>Bank Transfer</span>
+                <span className={cn("text-xs", isDark ? "text-gray-500" : "text-gray-500")}>Transfer to account</span>
+              </button>
+              <button
+                onClick={() => setOtherMethod("STORE_CREDIT")}
+                className={cn(
+                  "flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all",
+                  otherMethod === "STORE_CREDIT"
+                    ? isDark ? "border-amber-500 bg-amber-500/20" : "border-amber-500 bg-amber-50"
+                    : isDark ? "border-gray-700 hover:border-gray-600" : "border-gray-200 hover:border-gray-300"
+                )}
+              >
+                <div className={cn(
+                  "w-12 h-12 rounded-full flex items-center justify-center mb-2",
+                  isDark ? "bg-amber-500/20" : "bg-amber-100"
+                )}>
+                  <CreditCard className={cn("h-6 w-6", isDark ? "text-amber-400" : "text-amber-600")} />
+                </div>
+                <span className={cn("font-medium", isDark ? "text-white" : "text-gray-900")}>Store Credit</span>
+                <span className={cn("text-xs", isDark ? "text-gray-500" : "text-gray-500")}>Use customer credit</span>
+              </button>
             </div>
+            {otherMethod && (
+              <div className={cn(
+                "p-4 rounded-xl text-center",
+                isDark ? "bg-gray-800/50" : "bg-gray-50"
+              )}>
+                <p className={cn("text-sm mb-1", isDark ? "text-gray-400" : "text-gray-500")}>
+                  Pay with {otherMethod === "TRANSFER" ? "Bank Transfer" : "Store Credit"}
+                </p>
+                <p className={cn(
+                  "text-2xl font-bold",
+                  isDark ? "text-white" : "text-gray-900"
+                )}>
+                  {formatCurrency(total)}
+                </p>
+              </div>
+            )}
           </TabsContent>
 
           {/* Split Payment */}

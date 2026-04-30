@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, User, Phone, Mail, X, Plus, Loader2 } from "lucide-react";
+import { Search, User, Phone, Mail, X, Plus, Loader2, CreditCard, ShoppingBag, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
-  DialogTitle 
+  DialogTitle,
+  DialogFooter
 } from "@/components/ui/dialog";
 import { customersApi } from "@/lib/api/customers";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -21,6 +23,22 @@ interface Customer {
   phone?: string;
   totalSpent?: number;
   orderCount?: number;
+  creditBalance?: number;
+}
+
+interface CustomerHistory {
+  saleNumber: string;
+  total: number;
+  status: string;
+  createdAt: string;
+}
+
+interface CreditTransaction {
+  id: string;
+  type: "ADD" | "DEDUCT";
+  amount: number;
+  note?: string;
+  createdAt: string;
 }
 
 interface CustomerSearchModalProps {
@@ -38,6 +56,14 @@ export function CustomerSearchModal({ open, onClose, onSelectCustomer }: Custome
   const [showCreate, setShowCreate] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: "", phone: "", email: "" });
   const [creating, setCreating] = useState(false);
+  
+  // Customer details state
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
+  const [customerHistory, setCustomerHistory] = useState<CustomerHistory[]>([]);
+  const [creditBalance, setCreditBalance] = useState<number>(0);
+  const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([]);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
   useEffect(() => {
     if (open && searchQuery.length >= 2) {
@@ -59,6 +85,33 @@ export function CustomerSearchModal({ open, onClose, onSelectCustomer }: Custome
       setCustomers([]);
     }
   }, [searchQuery, open]);
+
+  const handleViewCustomerDetails = async (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setShowDetails(true);
+    setLoadingDetails(true);
+    try {
+      const emptyHistory = Promise.resolve<{ data: CustomerHistory[] }>({ data: [] });
+      const emptyCreditTransactions = Promise.resolve<{ data: CreditTransaction[] }>({ data: [] });
+      const emptyCredit = Promise.resolve<{ balance: number }>({ balance: 0 });
+      const [historyRes, creditRes, transactionsRes] = (await Promise.all([
+        customer.id ? customersApi.getHistory(customer.id).catch(() => emptyHistory) : emptyHistory,
+        customer.id ? customersApi.getCredit(customer.id).catch(() => emptyCredit) : emptyCredit,
+        customer.id ? customersApi.getCreditTransactions(customer.id).catch(() => emptyCreditTransactions) : emptyCreditTransactions,
+      ])) as [
+        { data: CustomerHistory[] },
+        { balance: number },
+        { data: CreditTransaction[] }
+      ];
+      setCustomerHistory(historyRes.data || []);
+      setCreditBalance(creditRes.balance || 0);
+      setCreditTransactions(transactionsRes.data || []);
+    } catch (err) {
+      console.error("Failed to load customer details:", err);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
 
   const handleCreateCustomer = async () => {
     if (!newCustomer.name.trim()) return;
@@ -165,6 +218,17 @@ export function CustomerSearchModal({ open, onClose, onSelectCustomer }: Custome
                             </p>
                           </div>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewCustomerDetails(customer);
+                          }}
+                          className={isDark ? "text-gray-400 hover:text-white" : "text-gray-500 hover:text-gray-900"}
+                        >
+                          <History className="h-4 w-4" />
+                        </Button>
                       </div>
                     </button>
                   ))}
@@ -269,6 +333,182 @@ export function CustomerSearchModal({ open, onClose, onSelectCustomer }: Custome
           </>
         )}
       </DialogContent>
+
+      {/* Customer Details Modal */}
+      <Dialog open={showDetails} onOpenChange={setShowDetails}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Customer Details</DialogTitle>
+          </DialogHeader>
+          {loadingDetails ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-[#003D9B]" />
+            </div>
+          ) : selectedCustomer && (
+            <div className="space-y-4">
+              {/* Customer Info */}
+              <div className={cn(
+                "p-4 rounded-lg",
+                isDark ? "bg-gray-800" : "bg-gray-50"
+              )}>
+                <div className="flex items-center gap-4">
+                  <div className={cn(
+                    "w-16 h-16 rounded-full flex items-center justify-center",
+                    isDark ? "bg-gray-700" : "bg-gray-200"
+                  )}>
+                    <User className="h-8 w-8 text-gray-500" />
+                  </div>
+                  <div className="flex-1">
+                    <p className={cn("text-lg font-bold", isDark ? "text-white" : "text-gray-900")}>
+                      {selectedCustomer.name}
+                    </p>
+                    <div className={cn("text-sm", isDark ? "text-gray-400" : "text-gray-500")}>
+                      {selectedCustomer.phone && <span className="mr-3"><Phone className="h-3 w-3 inline mr-1" />{selectedCustomer.phone}</span>}
+                      {selectedCustomer.email && <span><Mail className="h-3 w-3 inline mr-1" />{selectedCustomer.email}</span>}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className={cn("text-sm", isDark ? "text-gray-400" : "text-gray-500")}>Credit Balance</p>
+                    <p className={cn("text-2xl font-bold", creditBalance > 0 ? "text-emerald-500" : isDark ? "text-white" : "text-gray-900")}>
+                      {formatCurrency(creditBalance)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Purchase History */}
+              <div>
+                <p className={cn("text-sm font-medium mb-2", isDark ? "text-gray-300" : "text-gray-700")}>
+                  Purchase History
+                </p>
+                <div className={cn("rounded-lg overflow-hidden max-h-48 overflow-y-auto", isDark ? "bg-gray-800" : "bg-gray-50")}>
+                  {customerHistory.length > 0 ? (
+                    customerHistory.map((sale, idx) => (
+                      <div key={idx} className={cn(
+                        "flex justify-between p-3",
+                        isDark ? "border-b border-gray-700" : "border-b border-gray-200"
+                      )}>
+                        <div>
+                          <p className={cn("font-medium", isDark ? "text-white" : "text-gray-900")}>
+                            {sale.saleNumber || "Sale"}
+                          </p>
+                          <p className={cn("text-xs", isDark ? "text-gray-500" : "text-gray-500")}>
+                            {new Date(sale.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className={cn("font-medium", isDark ? "text-white" : "text-gray-900")}>
+                            {formatCurrency(sale.total)}
+                          </p>
+                          <Badge className={cn(
+                            "text-xs",
+                            sale.status === "COMPLETED" ? "bg-emerald-100 text-emerald-700" :
+                            sale.status === "HELD" ? "bg-amber-100 text-amber-700" :
+                            "bg-gray-100 text-gray-700"
+                          )}>
+                            {sale.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center">
+                      <ShoppingBag className={cn("h-8 w-8 mx-auto mb-2 opacity-50", isDark ? "text-gray-600" : "text-gray-400")} />
+                      <p className={cn("text-sm", isDark ? "text-gray-500" : "text-gray-500")}>No purchase history</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Credit Transactions */}
+              <div>
+                <p className={cn("text-sm font-medium mb-2", isDark ? "text-gray-300" : "text-gray-700")}>
+                  Credit Transactions
+                </p>
+                <div className={cn("rounded-lg overflow-hidden max-h-48 overflow-y-auto", isDark ? "bg-gray-800" : "bg-gray-50")}>
+                  {creditTransactions.length > 0 ? (
+                    creditTransactions.map((tx, idx) => (
+                      <div key={idx} className={cn(
+                        "flex justify-between p-3",
+                        isDark ? "border-b border-gray-700" : "border-b border-gray-200"
+                      )}>
+                        <div>
+                          <p className={cn("font-medium", isDark ? "text-white" : "text-gray-900")}>
+                            {tx.type === "ADD" ? "Credit Added" : "Credit Used"}
+                          </p>
+                          <p className={cn("text-xs", isDark ? "text-gray-500" : "text-gray-500")}>
+                            {tx.note || "No note"} • {new Date(tx.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <p className={cn("font-medium", tx.type === "ADD" ? "text-emerald-500" : "text-red-500")}>
+                          {tx.type === "ADD" ? "+" : "-"}{formatCurrency(tx.amount)}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center">
+                      <CreditCard className={cn("h-8 w-8 mx-auto mb-2 opacity-50", isDark ? "text-gray-600" : "text-gray-400")} />
+                      <p className={cn("text-sm", isDark ? "text-gray-500" : "text-gray-500")}>No credit transactions</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <div className="flex gap-2 flex-1">
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  const amount = prompt("Enter amount to add as store credit:");
+                  if (amount && selectedCustomer) {
+                    customersApi.addCredit(selectedCustomer.id, {
+                      amount: parseFloat(amount),
+                      note: "Added from POS terminal",
+                    }).then(() => handleViewCustomerDetails(selectedCustomer));
+                  }
+                }}
+                className="flex-1"
+              >
+                <CreditCard className="h-4 w-4 mr-2" />
+                Add Credit
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  const amount = prompt("Enter amount to deduct from store credit:");
+                  if (amount && selectedCustomer) {
+                    customersApi.deductCredit(selectedCustomer.id, {
+                      amount: parseFloat(amount),
+                      note: "Deducted from POS terminal",
+                    }).then(() => handleViewCustomerDetails(selectedCustomer));
+                  }
+                }}
+                className="flex-1"
+                disabled={creditBalance <= 0}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Deduct Credit
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowDetails(false)}>Close</Button>
+              <Button 
+                onClick={() => {
+                  if (selectedCustomer) {
+                    onSelectCustomer(selectedCustomer);
+                    setShowDetails(false);
+                    onClose();
+                  }
+                }}
+                className="bg-[#003D9B] hover:bg-[#003D9B]/90 text-white"
+              >
+                Select Customer
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

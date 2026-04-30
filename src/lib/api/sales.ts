@@ -61,6 +61,15 @@ export const salesApi = {
     return response.data;
   },
 
+  addPayment: async (saleId: string, data: { 
+    method: "CASH" | "CARD" | "TRANSFER" | "STORE_CREDIT" | "OTHER";
+    amount: number;
+    reference?: string;
+  }): Promise<Sale> => {
+    const response = await apiClient.post<Sale>(`/sales/${saleId}/payments`, data);
+    return response.data;
+  },
+
   complete: async (saleId: string, data: CompleteSaleRequest): Promise<Sale> => {
     const response = await apiClient.post<Sale>(`/sales/${saleId}/complete`, data);
     return response.data;
@@ -71,8 +80,21 @@ export const salesApi = {
     return response.data;
   },
 
-  refund: async (saleId: string, data: { reason?: string }): Promise<Sale> => {
+  refund: async (saleId: string, data: { 
+    items?: { itemId: string; quantity: number }[];
+    refundAmount?: number;
+    reason?: string 
+  }): Promise<Sale> => {
     const response = await apiClient.post<Sale>(`/sales/${saleId}/refund`, data);
+    return response.data;
+  },
+
+  returnExchange: async (saleId: string, data: {
+    type: "RETURN" | "EXCHANGE" | "RETURN_AND_EXCHANGE";
+    returnItems?: { productId: string; quantity: number }[];
+    exchangeItems?: { productId: string; quantity: number; price: number }[];
+  }): Promise<Sale> => {
+    const response = await apiClient.post<Sale>(`/sales/${saleId}/return-exchange`, data);
     return response.data;
   },
 
